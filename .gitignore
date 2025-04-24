@@ -1,0 +1,41 @@
+# Arquivos Python gerados
+__pycache__/
+*.pyc
+*.pyd
+dist/
+build/
+eggs/
+.eggs/
+sdist/
+wheel/
+*.egg-info/
+.venv
+venv
+env
+
+# Arquivos de log e temporários
+*.log
+*.bak
+*.tmp
+*.swp
+db.sqlite3
+instance/
+
+# Arquivos específicos do ambiente de desenvolvimento
+.DS_Store
+Thumbs.db
+.idea/
+.project
+.pydevproject
+*.sublime-project
+*.sublime-workspace
+
+# Arquivos de pacotes e distribuição
+requirements*.txt
+
+# Outros arquivos específicos do projeto que você não quer versionar
+# Exemplo: arquivos de configuração sensíveis
+config.ini
+secrets.json
+
+/dados
