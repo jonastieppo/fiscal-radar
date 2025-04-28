@@ -4,8 +4,9 @@ import pandas as pd
 from montagem_bases import CNEP
 
 
-data = pd.read_csv('dados/NOTA_FISCAL_ITEM_001P.csv', sep=';')
-data.head()
+NOTA_FI = pd.read_csv('dados/NOTA_FISCAL_ITEM_001P.csv', sep=';')
+
+NOTA_FI.info()
 
 # %%
 import pandas as pd

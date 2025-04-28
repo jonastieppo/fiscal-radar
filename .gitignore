@@ -39,3 +39,5 @@ config.ini
 secrets.json
 
 /dados
+
+.env
