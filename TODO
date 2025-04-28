@@ -1,0 +1,4 @@
++ Criar três tabelas, no postgreeSQL, com a base de dados analisada
++ Criar esquemas, usando um ORM
++ Executar uma operação the join, e criar uma consulta a ser utilizada para
+o treinamento de um modelo estatístico
