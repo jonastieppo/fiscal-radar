@@ -2,6 +2,10 @@ import csv
 import os
 import zipfile
 import dask.dataframe as dd
+import sqlalchemy
+import pandas as pd
+import psycopg2
+
 def extrair_zips(pasta):
     """
     Extrai o conteúdo de todos os arquivos .zip encontrados na pasta especificada.
@@ -265,3 +269,99 @@ def date_convertion_dask(df : dd.DataFrame, date_columns : list[str], folder_exp
                    df=df,
                    sep=';'
                )
+
+def make_query(query: str, connection : sqlalchemy.Connection)->pd.DataFrame:
+
+    try:
+        df = pd.read_sql(query, connection)
+        return df
+    except Exception as e:
+        print(e)
+
+def insert_rows_in_database(df_to_insert : pd.DataFrame | dd.DataFrame, table_name : str,
+                            columns_dictionary,
+                            db_host : str,
+                            db_user : str,
+                            db_password : str,
+                            db_name : str,
+                            schema = 'dsa',
+                            ):
+    '''
+    Function to insert rows in a existent dataframe
+    '''
+    df_column_names = df_to_insert.columns
+    columns_in_table = [columns_dictionary[c] for c in df_column_names]
+
+    # Establish the connection
+    try:
+        conn = psycopg2.connect(host=db_host, database=db_name, user=db_user, password=db_password)
+        cur = conn.cursor()
+
+        if type(df_to_insert) == dd.DataFrame:
+
+            for partition in df_to_insert.partitions:
+                pdf = partition.compute()
+
+                if pdf.empty:
+                    continue  # Skip empty partitions
+
+                data_to_insert = [tuple(x if pd.notna(x) else None for x in row) for row in pdf.values]
+
+                insert_template = f'''
+                INSERT INTO {schema}."{table_name}" ({', '.join(columns_in_table)})
+                VALUES ({', '.join(['%s'] * len(columns_in_table))});
+                '''
+
+                # Commiting each partition
+                try:
+                    print(f"Attempting to insert {len(data_to_insert)} rows using execute_many...")
+                    cur.executemany(insert_template, data_to_insert)
+                    print("Execute many successful.")
+
+                    # Commit the transaction
+                    conn.commit()
+                    print("Transaction committed successfully.")
+
+                except (psycopg2.Error, Exception) as e:
+                    print(f"Database error: {e}")
+                    if conn:
+                        conn.rollback() # Roll back the transaction on error
+                        print("Transaction rolled back due to error.")
+
+
+        elif type(df_to_insert) == pd.DataFrame:
+            data_to_insert = [tuple(row) for row in df_to_insert.values]
+
+
+            insert_template = f'''
+            INSERT INTO {schema}."{table_name}" ({', '.join(columns_in_table)})
+            VALUES ({', '.join(['%s'] * len(columns_in_table))});
+            '''
+            try:
+                print(f"Attempting to insert {len(data_to_insert)} rows using execute_many...")
+                cur.executemany(insert_template, data_to_insert)
+                print("Execute many successful.")
+
+                # Commit the transaction
+                conn.commit()
+                print("Transaction committed successfully.")
+
+            except (psycopg2.Error, Exception) as e:
+                print(f"Database error: {e}")
+                if conn:
+                    conn.rollback() # Roll back the transaction on error
+                    print("Transaction rolled back due to error.")
+
+    except (psycopg2.Error, Exception) as e:
+        print(f"Database error: {e}")
+        if conn:
+            conn.rollback() # Roll back the transaction on error
+            print("Transaction rolled back due to error.")
+
+    finally:
+        # Close the cursor and connection
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+            print("Database connection closed.")
