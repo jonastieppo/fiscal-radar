@@ -3,7 +3,7 @@
 # importando bibliotecas essenciais
 import pandas as pd
 import os
-from helper import read_notas_fiscais, date_convertion_dask
+from helper import date_convertion_pandas
 import dask.dataframe as dd
 from dicionarios_gerais import dicionario_CNEP, dicionario_tabela_ceis, dicionario_tabela_nf_item
 CNEP = pd.read_csv(os.path.join(os.getcwd(),'dados','20250418_CNEP.csv'),
@@ -14,6 +14,15 @@ CNEP = pd.read_csv(os.path.join(os.getcwd(),'dados','20250418_CNEP.csv'),
 
 CNEP.columns = dicionario_CNEP['COLUNA']
 
+colunas_data = [
+    'DATA INÍCIO SANÇÃO',
+    'DATA FINAL SANÇÃO',
+    'DATA PUBLICAÇÃO',
+    'DATA DO TRÂNSITO EM JULGADO',
+    'DATA ORIGEM INFORMAÇÃO'
+]
+
+CNEP = date_convertion_pandas(CNEP,colunas_data)
 
 CEIS = pd.read_csv(os.path.join(os.getcwd(),'dados','20250418_CEIS.csv'),
             sep=';',
@@ -23,6 +32,15 @@ CEIS = pd.read_csv(os.path.join(os.getcwd(),'dados','20250418_CEIS.csv'),
 
 CEIS.columns = dicionario_tabela_ceis['COLUNA']
 
+colunas_data = [
+    'DATA INÍCIO SANÇÃO',
+    'DATA FINAL SANÇÃO',
+    'DATA PUBLICAÇÃO',
+    'DATA DO TRÂNSITO EM JULGADO',
+    'DATA ORIGEM INFORMAÇÃO'
+]
+
+CEIS = date_convertion_pandas(CEIS, colunas_data)
 
 NOTA_FISCAL_ITEM = dd.read_csv(
     os.path.join(os.getcwd(),'dados',"nota_fiscal_item.csv"),
@@ -35,7 +53,7 @@ NOTA_FISCAL_ITEM = dd.read_csv(
         "NÚMERO": "int64",
         "NATUREZA DA OPERAÇÃO": str,
         "DATA EMISSÃO": str,
-        "CPF/CNPJ Emitente": str,
+        "CPF/CNPJ Emitente": "int64",
         "RAZÃO SOCIAL EMITENTE": str,
         "INSCRIÇÃO ESTADUAL EMITENTE": "int64",
         "UF EMITENTE": str,
@@ -61,6 +79,8 @@ NOTA_FISCAL_ITEM = dd.read_csv(
 NOTA_FISCAL_ITEM = NOTA_FISCAL_ITEM.drop(columns=['Unnamed: 0'])
 NOTA_FISCAL_ITEM.columns = dicionario_tabela_nf_item['COLUNA']
 
+
+
 NOTA_FISCAL_ITEM_001 = dd.read_csv(
     os.path.join(os.getcwd(),'dados',"NOTA_FISCAL_ITEM_001P.csv"),
     sep=";",
@@ -72,7 +92,7 @@ NOTA_FISCAL_ITEM_001 = dd.read_csv(
         "NÚMERO": "int64",
         "NATUREZA DA OPERAÇÃO": str,
         "DATA EMISSÃO": str,
-        "CPF/CNPJ Emitente": str,
+        "CPF/CNPJ Emitente": "int64",
         "RAZÃO SOCIAL EMITENTE": str,
         "INSCRIÇÃO ESTADUAL EMITENTE": "int64",
         "UF EMITENTE": str,
