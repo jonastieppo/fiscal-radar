@@ -1,7 +1,7 @@
 import csv
 import os
 import zipfile
-
+import dask.dataframe as dd
 def extrair_zips(pasta):
     """
     Extrai o conteúdo de todos os arquivos .zip encontrados na pasta especificada.
@@ -140,20 +140,6 @@ def mount_nota_fiscal_item_dataframe(root_folder, max_dict=100):
         if item.is_dir():
             for item_2 in os.scandir(item.path):
                 if item_2.is_file() and item_2.name.endswith('NotaFiscalItem.csv'):
-                    # df = read_notas_fiscais(item_2.path)
-
-                    # if counter>=max_dict:
-                    #     return
-
-                    # if 'nota_fiscal_item.csv' in os.listdir():
-                    #     adicionar_dataframe_csv('nota_fiscal_item.csv', df, sep=';')
-                    #     counter+=1
-                    # else:
-                    #     df.to_csv('nota_fiscal_item.csv',
-                    #               index=None, sep=';',quoting=csv.QUOTE_ALL,
-                    #               doublequote=True)
-                    #     counter+=1
-
                     read_item_and_save_csv(
                         item=item_2,
                         counter=counter,
@@ -213,3 +199,69 @@ def selecionar_faixa(df, coluna, q1, q2):
     limite_superior = df[coluna].quantile(q2)
     df_faixa = df[(df[coluna] >= limite_inferior) & (df[coluna] <= limite_superior)].copy(deep=True)
     return df_faixa
+
+def date_convertion_pandas(df : pd.DataFrame | dd.DataFrame, date_columns : list[str]):
+    '''
+    Converts date columns to YYYY-MM-DD format
+    '''
+
+    df_copy = df.copy(deep=True)
+
+    for col_name in date_columns:
+        if col_name in df_copy.columns:
+            print(f"Converting column '{col_name}' to datetime objects...")
+            # Convert to datetime objects, coercing errors to NaT (Not a Time)
+            df_copy[col_name] = pd.to_datetime(df_copy[col_name], format='%d/%m/%Y', errors='coerce')
+            # Convert NaT to None (which becomes SQL NULL)
+            df_copy[col_name] = df_copy[col_name].astype(object).where(df_copy[col_name].notnull(), None)
+    # --- End Date Conversion ---
+
+    if type(df_copy) == dd.DataFrame:
+            df_copy = df_copy.compute()
+
+    return df_copy
+
+def date_convertion_dask(df : dd.DataFrame, date_columns : list[str], folder_export : str, final_arquive_name):
+    '''
+    Converts date columns to YYYY-MM-DD format
+    '''
+
+    df_copy = df.copy()
+
+    for col_name in date_columns:
+        if col_name in df_copy.columns:
+            print(f"Converting column '{col_name}' to datetime objects...")
+            # Convert to datetime objects, coercing errors to NaT (Not a Time)
+            df_copy[col_name] = dd.to_datetime(df_copy[col_name], format='%d/%m/%Y', errors='coerce')
+            # Convert NaT to None (which becomes SQL NULL)
+            df_copy[col_name] = df_copy[col_name].astype(object).where(df_copy[col_name].notnull(), None)
+    # --- End Date Conversion ---
+
+    df_copy.to_csv(folder_export)
+
+    # As dasks creates a folder with several files, we will parse every file in this folder:
+    if final_arquive_name in os.listdir():
+        os.remove(final_arquive_name)
+
+    for f in os.scandir(folder_export):
+
+        if f.name.endswith('.part'):
+           df = pd.read_csv(
+               f.path,
+               sep=',',
+               encoding='utf-8',
+               decimal='.',
+           )
+
+           if final_arquive_name not in os.listdir():
+                df.to_csv(final_arquive_name, sep=';',
+                          quoting=csv.QUOTE_ALL,
+                          doublequote=True,
+                          index=None
+                          )
+           else:
+               adicionar_dataframe_csv(
+                   nome_arquivo=final_arquive_name,
+                   df=df,
+                   sep=';'
+               )

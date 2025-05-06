@@ -63,7 +63,7 @@ cnep_table = Table(
 )
 
 dsa_table = Table(
-    "dsa_data",  # Choose a suitable table name
+    "CEIS",  # Choose a suitable table name
     metadata,
     Column("id",
            autoincrement=True,
@@ -114,32 +114,32 @@ dsa_nfe_items_table = Table(
            ),
     # Skipping 'Unnamed: 0' as it seems like an artifact index
     Column("chave_de_acesso", Text, nullable=False), # 211037 non-null object -> Text
-    Column("modelo", Text, nullable=False), # 211037 non-null object -> Text
-    Column("serie", Integer, nullable=False), # 211037 non-null int64 -> Integer
-    Column("numero", BigInteger, nullable=False), # 211037 non-null int64 -> BigInteger for potentially large invoice numbers
+    Column("modelo", Text, nullable=True), # 211037 non-null object -> Text
+    Column("serie", Integer, nullable=True), # 211037 non-null int64 -> Integer
+    Column("numero", BigInteger, nullable=True), # 211037 non-null int64 -> BigInteger for potentially large invoice numbers
     Column("natureza_da_operacao", Text, nullable=True), # 211036 non-null object -> Text, nullable
-    Column("data_emissao", Date, nullable=False), # 211037 non-null object (likely date strings) -> Date
-    Column("cpf_cnpj_emitente", Text, nullable=False), # 211037 non-null object -> Text (assuming it can be both CPF and CNPJ as string)
-    Column("razao_social_emitente", Text, nullable=False), # 211037 non-null object -> Text
-    Column("inscricao_estadual_emitente", BigInteger, nullable=False), # 211037 non-null int64 -> BigInteger
-    Column("uf_emitente", Text, nullable=False), # 211037 non-null object -> Text
-    Column("municipio_emitente", Text, nullable=False), # 211037 non-null object -> Text
-    Column("cnpj_destinatario", BigInteger, nullable=False), # 211037 non-null int64 -> BigInteger
-    Column("nome_destinatario", Text, nullable=False), # 211037 non-null object -> Text
-    Column("uf_destinatario", Text, nullable=False), # 211037 non-null object -> Text
-    Column("indicador_ie_destinatario", Text, nullable=False), # 211037 non-null object -> Text
-    Column("destino_da_operacao", Text, nullable=False), # 211037 non-null object -> Text
-    Column("consumidor_final", Text, nullable=False), # 211037 non-null object -> Text
-    Column("presenca_do_comprador", Text, nullable=False), # 211037 non-null object -> Text
-    Column("numero_produto", Integer, nullable=False), # 211037 non-null int64 -> Integer
-    Column("descricao_do_produto_servico", Text, nullable=False), # 211037 non-null object -> Text
-    Column("codigo_ncm_sh", BigInteger, nullable=False), # 211037 non-null int64 -> BigInteger for NCM/SH codes
+    Column("data_emissao", Date, nullable=True), # 211037 non-null object (likely date strings) -> Date
+    Column("cpf_cnpj_emitente", Text, nullable=True), # 211037 non-null object -> Text (assuming it can be both CPF and CNPJ as string)
+    Column("razao_social_emitente", Text, nullable=True), # 211037 non-null object -> Text
+    Column("inscricao_estadual_emitente", BigInteger, nullable=True), # 211037 non-null int64 -> BigInteger
+    Column("uf_emitente", Text, nullable=True), # 211037 non-null object -> Text
+    Column("municipio_emitente", Text, nullable=True), # 211037 non-null object -> Text
+    Column("cnpj_destinatario", BigInteger, nullable=True), # 211037 non-null int64 -> BigInteger
+    Column("nome_destinatario", Text, nullable=True), # 211037 non-null object -> Text
+    Column("uf_destinatario", Text, nullable=True), # 211037 non-null object -> Text
+    Column("indicador_ie_destinatario", Text, nullable=True), # 211037 non-null object -> Text
+    Column("destino_da_operacao", Text, nullable=True), # 211037 non-null object -> Text
+    Column("consumidor_final", Text, nullable=True), # 211037 non-null object -> Text
+    Column("presenca_do_comprador", Text, nullable=True), # 211037 non-null object -> Text
+    Column("numero_produto", Integer, nullable=True), # 211037 non-null int64 -> Integer
+    Column("descricao_do_produto_servico", Text, nullable=True), # 211037 non-null object -> Text
+    Column("codigo_ncm_sh", BigInteger, nullable=True), # 211037 non-null int64 -> BigInteger for NCM/SH codes
     Column("ncm_sh_tipo_de_produto", Text, nullable=True), # 199688 non-null object -> Text, nullable
-    Column("cfop", Integer, nullable=False), # 211037 non-null int64 -> Integer
-    Column("quantidade", Numeric, nullable=False), # 211037 non-null float64 -> Numeric for precision
+    Column("cfop", Integer, nullable=True), # 211037 non-null int64 -> Integer
+    Column("quantidade", Numeric, nullable=True), # 211037 non-null float64 -> Numeric for precision
     Column("unidade", Text, nullable=True), # 210740 non-null object -> Text, nullable
-    Column("valor_unitario", Numeric, nullable=False), # 211037 non-null float64 -> Numeric for precision
-    Column("valor_total", Numeric, nullable=False), # 211037 non-null float64 -> Numeric for precision
+    Column("valor_unitario", Numeric, nullable=True), # 211037 non-null float64 -> Numeric for precision
+    Column("valor_total", Numeric, nullable=True), # 211037 non-null float64 -> Numeric for precision
     schema='dsa' # Specify the schema
 )
 

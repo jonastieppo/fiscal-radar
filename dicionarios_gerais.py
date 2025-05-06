@@ -5,8 +5,8 @@ import pandas as pd
 # Dicionário Python
 dicionario_CNEP = {
     'COLUNA': ['CADASTRO', 'CÓDIGO DA SANÇÃO', 'TIPO DE PESSOA', 'CPF OU CNPJ DO SANCIONADO', 'NOME DO SANCIONADO',
-               'NOME INFORMADO PELO ÓRGÃO SANCIONADOR', 'RAZÃO SOCIAL – CADASTRO RECEITA',
-               'NOME FANTASIA – CADASTRO RECEITA', 'NÚMERO DO PROCESSO', 'CATEGORIA DA SANÇÃO', 'VALOR DA MULTA',
+               'NOME INFORMADO PELO ÓRGÃO SANCIONADOR', 'RAZÃO SOCIAL - CADASTRO RECEITA',
+               'NOME FANTASIA - CADASTRO RECEITA', 'NÚMERO DO PROCESSO', 'CATEGORIA DA SANÇÃO', 'VALOR DA MULTA',
                'DATA INÍCIO SANÇÃO', 'DATA FINAL SANÇÃO', 'DATA PUBLICAÇÃO', 'PUBLICAÇÃO',
                'DETALHAMENTO DO MEIO DE PUBLICAÇÃO', 'DATA DO TRÂNSITO EM JULGADO', 'ABRANGÊNCIA DA SANÇÃO',
                'ÓRGÃO SANCIONADOR', 'UF ÓRGÃO SANCIONADOR', 'ESFERA ÓRGÃO SANCIONADOR', 'FUNDAMENTAÇÃO LEGAL',
@@ -49,8 +49,8 @@ Para o CEIS
 # Dicionário Python com os dados fornecidos
 dicionario_tabela_ceis = {
     'COLUNA': ['CADASTRO', 'CÓDIGO DA SANÇÃO', 'TIPO DE PESSOA', 'CPF OU CNPJ DO SANCIONADO',
-               'NOME DO SANCIONADO', 'NOME INFORMADO PELO ÓRGÃO SANCIONADOR', 'RAZÃO SOCIAL – CADASTRO RECEITA',
-               'NOME FANTASIA – CADASTRO RECEITA', 'NÚMERO DO PROCESSO', 'CATEGORIA DA SANÇÃO',
+               'NOME DO SANCIONADO', 'NOME INFORMADO PELO ÓRGÃO SANCIONADOR', 'RAZÃO SOCIAL - CADASTRO RECEITA',
+               'NOME FANTASIA - CADASTRO RECEITA', 'NÚMERO DO PROCESSO', 'CATEGORIA DA SANÇÃO',
                'DATA INÍCIO SANÇÃO', 'DATA FINAL SANÇÃO', 'DATA PUBLICAÇÃO', 'PUBLICAÇÃO',
                'DETALHAMENTO DO MEIO DE PUBLICAÇÃO', 'DATA DO TRÂNSITO EM JULGADO', 'ABRANGÊNCIA DA SANÇÃO',
                'ÓRGÃO SANCIONADOR', 'UF ÓRGÃO SANCIONADOR', 'ESFERA ÓRGÃO SANCIONADOR', 'FUNDAMENTAÇÃO LEGAL',
@@ -202,3 +202,94 @@ dicionario_tabela_nf_item = {
 
 # Criação do DataFrame
 dataframe_tabela_nf_item = pd.DataFrame(dicionario_tabela_nf_item)
+
+# %%
+'''
+COLUNAS DO BANCO DE DADOS
+'''
+
+CNEP_SQL_COLUMNS = {
+                             'CADASTRO':"CADASTRO",
+                     'CÓDIGO DA SANÇÃO':"CODIGO_DA_SANCAO",
+                       'TIPO DE PESSOA':"TIPO_DE_PESSOA",
+            'CPF OU CNPJ DO SANCIONADO':"CPF_CNPJ",
+                   'NOME DO SANCIONADO':"NOME_DO_SANCIONADO",
+'NOME INFORMADO PELO ÓRGÃO SANCIONADOR':"NOME_INFORMADO_PELO_ORGAO_SANCIONADOR",
+      'RAZÃO SOCIAL - CADASTRO RECEITA':"RAZAO_SOCIAL_CADASTRO_RECEITA",
+     'NOME FANTASIA - CADASTRO RECEITA':"NOME_FANTASIA_CADASTRO_RECEITA",
+                   'NÚMERO DO PROCESSO':"NUMERO_DO_PROCESSO",
+                  'CATEGORIA DA SANÇÃO':"CATEGORIA_DA_SANCAO",
+                       'VALOR DA MULTA':"VALOR_DA_MULTA",
+                   'DATA INÍCIO SANÇÃO':"DATA_INICIO_SANCAO",
+                    'DATA FINAL SANÇÃO':"DATA_FINAL_SANCAO",
+                      'DATA PUBLICAÇÃO':"DATA_PUBLICACAO",
+                           'PUBLICAÇÃO':"PUBLICACAO",
+   'DETALHAMENTO DO MEIO DE PUBLICAÇÃO':"DETALHAMENTO_DO_MEIO_DE_PUBLICACAO",
+          'DATA DO TRÂNSITO EM JULGADO':"DATA_DO_TRANSITO_EM_JULGADO",
+                'ABRANGÊNCIA DA SANÇÃO':"ABRANGENCIA_DA_SANCAO",
+                    'ÓRGÃO SANCIONADOR':"ORGAO_SANCIONADOR",
+                 'UF ÓRGÃO SANCIONADOR':"UF_ORGAO_SANCIONADOR",
+             'ESFERA ÓRGÃO SANCIONADOR':"ESFERA_ORGAO_SANCIONADOR",
+                  'FUNDAMENTAÇÃO LEGAL':"FUNDAMENTACAO_LEGAL",
+               'DATA ORIGEM INFORMAÇÃO':"DATA_ORIGEM_INFORMACAO",
+                   'ORIGEM INFORMAÇÕES':"ORIGEM_INFORMACOES",
+                          'OBSERVAÇÕES':"OBSERVACOES",
+
+}
+
+CEIS_SQL_COLUMNS = {
+    'CADASTRO': 'cadastro',
+    'CÓDIGO DA SANÇÃO': 'codigo_da_sancao',
+    'TIPO DE PESSOA': 'tipo_de_pessoa',
+    'CPF OU CNPJ DO SANCIONADO': 'cpf_ou_cnpj_do_sancionado',
+    'NOME DO SANCIONADO': 'nome_do_sancionado',
+    'NOME INFORMADO PELO ÓRGÃO SANCIONADOR': 'nome_informado_pelo_orgao_sancionador',
+    'RAZÃO SOCIAL - CADASTRO RECEITA': 'razao_social_cadastro_receita',
+    'NOME FANTASIA - CADASTRO RECEITA': 'nome_fantasia_cadastro_receita',
+    'NÚMERO DO PROCESSO': 'numero_do_processo',
+    'CATEGORIA DA SANÇÃO': 'categoria_da_sancao',
+    'DATA INÍCIO SANÇÃO': 'data_inicio_sancao',
+    'DATA FINAL SANÇÃO': 'data_final_sancao',
+    'DATA PUBLICAÇÃO': 'data_publicacao',
+    'PUBLICAÇÃO': 'publicacao',
+    'DETALHAMENTO DO MEIO DE PUBLICAÇÃO': 'detalhamento_do_meio_de_publicacao',
+    'DATA DO TRÂNSITO EM JULGADO': 'data_do_transito_em_julgado',
+    'ABRANGÊNCIA DA SANÇÃO': 'abrangencia_da_sancao',
+    'ÓRGÃO SANCIONADOR': 'orgao_sancionador',
+    'UF ÓRGÃO SANCIONADOR': 'uf_orgao_sancionador',
+    'ESFERA ÓRGÃO SANCIONADOR': 'esfera_orgao_sancionador',
+    'FUNDAMENTAÇÃO LEGAL': 'fundamentacao_legal',
+    'DATA ORIGEM INFORMAÇÃO': 'data_origem_informacao',
+    'ORIGEM INFORMAÇÕES': 'origem_informacoes',
+    'OBSERVAÇÕES': 'observacoes'
+}
+
+NFE_SQL_COLUMNS = {
+    'CHAVE DE ACESSO': 'chave_de_acesso',
+    'MODELO': 'modelo',
+    'SÉRIE': 'serie',
+    'NÚMERO': 'numero',
+    'NATUREZA DA OPERAÇÃO': 'natureza_da_operacao',
+    'DATA EMISSÃO': 'data_emissao',
+    'CPF/CNPJ Emitente': 'cpf_cnpj_emitente',
+    'RAZÃO SOCIAL EMITENTE': 'razao_social_emitente',
+    'INSCRIÇÃO ESTADUAL EMITENTE': 'inscricao_estadual_emitente',
+    'UF EMITENTE': 'uf_emitente',
+    'MUNICÍPIO EMITENTE': 'municipio_emitente',
+    'CNPJ DESTINATÁRIO': 'cnpj_destinatario',
+    'NOME DESTINATÁRIO': 'nome_destinatario',
+    'UF DESTINATÁRIO': 'uf_destinatario',
+    'INDICADOR IE DESTINATÁRIO': 'indicador_ie_destinatario',
+    'DESTINO DA OPERAÇÃO': 'destino_da_operacao',
+    'CONSUMIDOR FINAL': 'consumidor_final',
+    'PRESENÇA DO COMPRADOR': 'presenca_do_comprador',
+    'NÚMERO PRODUTO': 'numero_produto',
+    'DESCRIÇÃO DO PRODUTO/SERVIÇO': 'descricao_do_produto_servico',
+    'CÓDIGO NCM/SH': 'codigo_ncm_sh',
+    'NCM/SH (TIPO DE PRODUTO)': 'ncm_sh_tipo_de_produto',
+    'CFOP': 'cfop',
+    'QUANTIDADE': 'quantidade',
+    'UNIDADE': 'unidade',
+    'VALOR UNITÁRIO': 'valor_unitario',
+    'VALOR TOTAL': 'valor_total'
+}

@@ -153,3 +153,13 @@ finally:
         conn.close()
 
 # %%
+'''
+testando a função de converter colunas
+'''
+from montagem_bases import NOTA_FISCAL_ITEM
+from helper import date_convertion_dask
+
+
+date_convertion_dask(df= NOTA_FISCAL_ITEM, date_columns=['DATA EMISSÃO'], folder_export='dados_compilados' ,final_arquive_name='nota_fiscal_item.csv')
+
+# %%
