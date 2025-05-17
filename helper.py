@@ -270,10 +270,19 @@ def date_convertion_dask(df : dd.DataFrame, date_columns : list[str], folder_exp
                    sep=';'
                )
 
-def make_query(query: str, connection : sqlalchemy.Connection)->pd.DataFrame:
+def make_query(query: str, connection : sqlalchemy.Connection, chunksize = None)->pd.DataFrame | dd.DataFrame:
 
     try:
-        df = pd.read_sql(query, connection)
+        df = pd.read_sql(query, connection, chunksize=chunksize)
+        return df
+    except Exception as e:
+        print(e)
+
+
+def make_query_dask(query: str, connection : str, index_col : str = None)->dd.DataFrame:
+
+    try:
+        df = dd.read_sql_query(query, connection, index_col=index_col)
         return df
     except Exception as e:
         print(e)
@@ -290,7 +299,7 @@ def insert_rows_in_database(df_to_insert : pd.DataFrame | dd.DataFrame, table_na
     Function to insert rows in a existent dataframe
     '''
     df_column_names = df_to_insert.columns
-    columns_in_table = [columns_dictionary[c] for c in df_column_names]
+    columns_in_table = [f'"{columns_dictionary[c]}"' for c in df_column_names]
 
     # Establish the connection
     try:

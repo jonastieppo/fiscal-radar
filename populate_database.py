@@ -2,12 +2,10 @@
 '''
 Populando a base de dados os dados do CEIS
 '''
-from montagem_bases import CEIS, CNEP, NOTA_FISCAL_ITEM_001
+from montagem_bases import CEIS, CNEP, NOTA_FISCAL_ITEM
 import dask.dataframe as dd
 from helper import insert_rows_in_database
 from dicionarios_gerais import CEIS_SQL_COLUMNS, CNEP_SQL_COLUMNS, NFE_SQL_COLUMNS
-import psycopg2
-import pandas as pd
 from dotenv import load_dotenv
 
 import os
@@ -19,11 +17,6 @@ db_password = os.environ.get("db_password")
 db_name = os.environ.get("db_name")
 
 # %%
-from montagem_bases import NOTA_FISCAL_ITEM
-from dicionarios_gerais import CEIS_SQL_COLUMNS, CNEP_SQL_COLUMNS, NFE_SQL_COLUMNS
-
-
-
 insert_rows_in_database(
     df_to_insert=CNEP,
     table_name='CNEP',
@@ -34,6 +27,8 @@ insert_rows_in_database(
     db_name=db_name
 )
 
+# %%
+
 insert_rows_in_database(
     df_to_insert=CEIS,
     table_name='CEIS',
@@ -43,6 +38,7 @@ insert_rows_in_database(
     db_password=db_password,
     db_name=db_name
 )
+# %%
 
 insert_rows_in_database(
     df_to_insert=NOTA_FISCAL_ITEM,
@@ -53,3 +49,5 @@ insert_rows_in_database(
     db_password=db_password,
     db_name=db_name
 )
+
+# %%
