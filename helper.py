@@ -74,6 +74,33 @@ def baixar_notas_fiscais(ano, mes):
     except Exception as e:
         print(f"Ocorreu um erro inesperado ao processar {url}: {e}")
 
+def baixarportal_transparencia(base_url,nome_do_arquivo, ano, mes):
+    """
+    Tenta baixar o arquivo de notas fiscais para o ano e mês especificados.
+
+    Args:
+        ano (int): O ano para baixar as notas fiscais.
+        mes (int): O mês para baixar as notas fiscais (1 a 12).
+    """
+    mes_str = f"{mes:02d}"
+    url = f"{base_url}/{ano}{mes_str}"
+    nome_arquivo = f"{nome_do_arquivo}_{ano}_{mes_str}.zip"
+
+    try:
+        print(f"Tentando baixar: {url}")
+        response = requests.get(url, stream=True)
+        response.raise_for_status()  # Lança uma exceção para status de erro HTTP
+
+        with open(nome_arquivo, "wb") as arquivo:
+            for chunk in response.iter_content(chunk_size=8192):
+                arquivo.write(chunk)
+        print(f"Download de {nome_arquivo} concluído com sucesso!")
+
+    except requests.exceptions.RequestException as e:
+        print(f"Erro ao baixar {url}: {e}")
+    except Exception as e:
+        print(f"Ocorreu um erro inesperado ao processar {url}: {e}")
+
 
 def read_notas_fiscais(path : str, encoding='cp1252')->pd.DataFrame:
 
