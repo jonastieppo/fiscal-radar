@@ -41,3 +41,7 @@ secrets.json
 /dados
 
 .env
+
+/data_anotation/diario_oficial
+
+!requirements.txt
