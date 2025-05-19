@@ -14,6 +14,8 @@ import dask.dataframe as dd
 from helper import make_query, make_query_dask
 # %%
 
+# %%
+
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
