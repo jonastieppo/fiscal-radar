@@ -45,3 +45,5 @@ secrets.json
 /data_anotation/diario_oficial
 
 !requirements.txt
+
+prompt_degug_*.txt
