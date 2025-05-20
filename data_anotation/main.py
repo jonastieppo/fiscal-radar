@@ -13,12 +13,13 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import sqlalchemy
 import pandas as pd
+import json
+import tqdm
 
 load_dotenv(os.path.join(os.getcwd(), '..','.env'))
 
 DEEP_SEEK_API_KEY = os.environ.get("DEEP_SEEK_API_KEY")
 DATABASE_URL = os.environ.get("DATABASE_URL")
-# %%
 
 class PostgresConnector:
     """
@@ -88,10 +89,25 @@ class DataAnotation:
         self.db_connection = PostgresConnector(DATABASE_URL)
         self.df_sancioned = self.parse_metadata()
         self.download_pdf_data(self.df_sancioned)
+        self.LLM_model = LLMPromptModel(api_key=DEEP_SEEK_API_KEY,
+                                        base_url='https://api.deepseek.com',
+                                        model_name='deepseek-chat'
+                                          )
+        self.extract_text_from_diario_oficial()
+        self.df_sancioned.to_csv('df_sancioned.csv', index=False)
+
         pass
 
-    def downloadDiarioOficial(self, ano, mes, dia, pagina, id):
-        base_url = fr"https://pesquisa.in.gov.br/imprensa/servlet/INPDFViewer?jornal=530&pagina={pagina}&data={dia}/{mes}/{ano}&captchafield=firstAccess"
+    def downloadDiarioOficial(self, ano, mes, dia, pagina, id, secao):
+
+        if int(secao) == 1:
+            jornal = 515
+        if int(secao) == 2:
+            jornal = 529
+        if int(secao) == 3:
+            jornal = 530
+
+        base_url = fr"https://pesquisa.in.gov.br/imprensa/servlet/INPDFViewer?jornal={jornal}&pagina={pagina}&data={dia}/{mes}/{ano}&captchafield=firstAccess"
         response = requests.get(base_url, stream=True)
 
         with open(os.path.join(os.getcwd(), 'diario_oficial', f"processo_{id}.pdf"), "wb") as f:
@@ -113,7 +129,8 @@ class DataAnotation:
                     mes=row['mes'],
                     dia=row['dia'],
                     pagina=row['pagina'],
-                    id=index
+                    id=index,
+                    secao=row['secao']
                 )
 
 
@@ -133,6 +150,7 @@ class DataAnotation:
             "mes": [],
             "dia": [],
             "pagina": [],
+            "secao": [],
             "num_processo": [],
             "cpf_cnpj": [],
             "nome_sancionado": [],
@@ -154,6 +172,12 @@ class DataAnotation:
             page_number = match.group(1)
 
             data["pagina"].append(page_number)
+
+            regex_pattern = r"Se[cç][aã]o\s+(\d+)"
+            match = re.search(regex_pattern, publicacao)
+            secao = match.group(1)
+            data["secao"].append(int(secao))
+
             data["num_processo"].append(numero_do_processo)
 
             data["cpf_cnpj"].append(row['cpf_ou_cnpj_do_sancionado'])
@@ -175,6 +199,12 @@ class DataAnotation:
             page_number = match.group(1)
 
             data["pagina"].append(page_number)
+
+            regex_pattern = r"Se[cç][aã]o\s+(\d+)"
+            match = re.search(regex_pattern, publicacao)
+            secao = match.group(1)
+            data["secao"].append(int(secao))
+
             data["num_processo"].append(numero_do_processo)
 
             data["cpf_cnpj"].append(row['CPF_CNPJ'])
@@ -184,8 +214,10 @@ class DataAnotation:
 
 
         df = pd.DataFrame(data)
-        
-        return df.drop_duplicates(subset='num_processo')
+        df = df.drop_duplicates(subset='num_processo')
+
+        df = df[df['secao'].isin([1,2,3])]
+        return df
 
 
 
@@ -210,6 +242,54 @@ and "DATA_PUBLICACAO" IS NOT NULL
 """
 
         return  self.db_connection.execute_select_query(query)
+    
+    def extract_text_from_diario_oficial(self):
+        
+        with open('./extracao_licitacao.prompt') as nf:
+            init_prompt = nf.read()
+
+        # Initialize the new column if it doesn't exist
+        if "numero_licitacao_referenciada" not in self.df_sancioned.columns:
+            self.df_sancioned["numero_licitacao_referenciada"] = pd.NA
+
+        for index, row in tqdm.tqdm(self.df_sancioned.iterrows()):
+            pdf_path = os.path.join(os.getcwd(),
+                                'diario_oficial', 
+                                f"processo_{index}.pdf")
+            text = self.extract_text_from_pdf(pdf_path)
+
+            final_prompt = fr"""
+{init_prompt}
+
+Agora, execute sua função para os seguintes dados:
+
+======================================================
+
+Dados de Procura: 
+cpf_cnpj = {row['cpf_cnpj']}
+nome_sancionado = {row['nome_sancionado']} 
+razao_social_cadastro_receita = {row['razao_social_cadastro_receita']} 
+num_processo = {row['num_processo']}
+
+Texto:
+{text}
+"""         
+
+            model_output = self.LLM_model.execute_prompt(final_prompt)
+            try:
+                json_object = self.LLM_model.parse_model_output(model_output)
+                numero_licitacao = json_object.get("numero_licitacao_referenciada")
+                print("Número Licitacao Encontrado:", numero_licitacao)
+                self.df_sancioned.loc[index, "numero_licitacao_referenciada"] = numero_licitacao
+                if numero_licitacao == None:
+                    with open(f'prompt_degug_{index}.txt', 'w') as f:
+                        f.write(final_prompt)
+
+            except Exception as e:
+                print(f"Ocorreu um erro para o índice {index}: {e}") # Good to include index in error
+
+
+
 
 
     def extract_text_from_pdf(self, pdf_path: str) -> str:
@@ -257,7 +337,7 @@ class LLMPromptModel:
         """
         try:
             response = self.client.chat.completions.create(
-                model="deepseek-chat",
+                model=self.model_name,
                 messages=[
                     {"role": "user", "content": prompt_text},
                 ],
@@ -285,6 +365,18 @@ class LLMPromptModel:
         except Exception as e:
             print(f"Error executing prompt with model '{self.model_name}': {e}")
             return ""
+        
+    def parse_model_output(self, output):
+        # Remove the markdown code block markers
+        json_str = output.strip().strip('```json').strip('```').strip()
+        
+        # Parse the JSON
+        try:
+            data = json.loads(json_str)
+            return data
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON: {e}")
+            return None
 
 
 D = DataAnotation()
@@ -292,3 +384,4 @@ D = DataAnotation()
 df = D.parse_metadata()
 
 len(df['num_processo'].unique())
+# %%

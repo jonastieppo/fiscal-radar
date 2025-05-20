@@ -47,3 +47,5 @@ secrets.json
 !requirements.txt
 
 prompt_degug_*.txt
+data_anotation/backup/df_sancioned.csv
+data_anotation/df_sancioned.csv
