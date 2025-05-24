@@ -1,7 +1,7 @@
 #
 # %%
 import pandas as pd
-
+from helper import to_snake_case
 # Dicionário Python
 dicionario_CNEP = {
     'COLUNA': ['CADASTRO', 'CÓDIGO DA SANÇÃO', 'TIPO DE PESSOA', 'CPF OU CNPJ DO SANCIONADO', 'NOME DO SANCIONADO',
@@ -293,3 +293,203 @@ NFE_SQL_COLUMNS = {
     'VALOR UNITÁRIO': 'valor_unitario',
     'VALOR TOTAL': 'valor_total'
 }
+
+# %%
+'''
+Dicionarios para Licitacoes
+'''
+
+# Dicionário Python para dicionario_tabela_contratos_compras
+dicionario_tabela_contratos_compras = {
+    'COLUNA': ['Número do Contrato', 'Objeto', 'Fundamento legal', 'Modalidade de compra',
+               'Situação Contrato', 'Código do Órgão Superior', 'Nome Órgão Superior',
+               'Código Órgão', 'Nome Órgão', 'Código UG', 'Nome UG',
+               'Data Assinatura Contrato', 'Data Publicação DOU', 'Data Início da Vigência',
+               'Data Fim da Vigência', 'Código Contratado', 'Nome Contratado',
+               'Valor Inicial da Compra', 'Valor Final da Compra', 'Número da Licitação',
+               'Código UG Licitação', 'Nome UG Licitação', 'Código Modalidade Compra Licitação',
+               'Modalidade Compra Licitação'],
+    'DESCRIÇÃO': ['Número que identifica o contrato no ComprasNet',
+                  'Objeto do contrato',
+                  'Indicação do embasamento legal do contrato',
+                  'Concorrência; Concurso; Convite; Dispensa de Licitação; Inexigibilidade de Licitação; Pregão; Registro de Preço; Tomada de Preços.',
+                  'Situação em que se encontra o contrato',
+                  'Código do Órgão Superior responsável pela licitação\nÓRGÃO SUPERIOR - Unidade da Administração Direta que tenha entidades por ele supervisionadas.\nFonte: Manual do SIAFI',
+                  'Nome do Órgão Superior',
+                  'Código do Órgão responsável pela licitação\nÓRGÃO SUBORDINADO - Entidade supervisionada por um Órgão da Administração Direta.\nFonte: Manual do SIAFI',
+                  'Nome do Órgão',
+                  'Código da Unidade Gestora do contrato.\nUNIDADE GESTORA (UG) - Unidade Orçamentária ou Administrativa que realiza atos de gestão orçamentária, financeira e/ou patrimonial, cujo titular, em consequência, está sujeito a tomada de contas anual na conformidade do disposto nos artigos 81 e 82 do Decreto-lei nr. 200, de 25 de fevereiro de 1967.\nFonte: Manual do SIAFI',
+                  'Nome da Unidade Gestora',
+                  'Data da assinatura do contrato',
+                  'Data da publicação do contrato no DOU',
+                  'Data de início da vigência do contrato',
+                  'Data de fim da vigência do contrato',
+                  'CNPJ do contratado',
+                  'Nome do contratado',
+                  'Valor inicial da compra',
+                  'Valor final da compra após possíveis reajustes, acréscimos etc',
+                  'Número que identifica a licitação no SIASG',
+                  'Código da Unidade Gestora responsável pela licitação',
+                  'Nome da Unidade Gestora responsável pela licitação',
+                  'Código da modalidade',
+                  'Modalidade da Licitação']
+}
+
+# Dicionário Python para dicionario_tabela_contratos_itemCompra
+dicionario_tabela_contratos_itemCompra = {
+    'COLUNA': ['Número Contrato', 'Código Órgão', 'Nome Órgão', 'Código UG', 'Nome UG',
+               'Código Item Compra', 'Descrição Item Compra', 'Quantidade Item', 'Valor Item'],
+    'DESCRIÇÃO': ['Número que identifica o contrato no ComprasNet',
+                  'Código do Órgão responsável pela licitação\nÓRGÃO SUBORDINADO - Entidade supervisionada por um Órgão da Administração Direta.\nFonte: Manual do SIAFI',
+                  'Nome do Órgão',
+                  'Código da Unidade Gestora do contrato.\nUNIDADE GESTORA (UG) - Unidade Orçamentária ou Administrativa que realiza atos de gestão orçamentária, financeira e/ou patrimonial, cujo titular, em consequência, está sujeito a tomada de contas anual na conformidade do disposto nos artigos 81 e 82 do Decreto-lei nr. 200, de 25 de fevereiro de 1967.\nFonte: Manual do SIAFI',
+                  'Nome da Unidade Gestora',
+                  'Código do item da compra no SIASG. O código do item é um número composto por 22 dígitos, formado através a seguinte lógica: 6 dígitos do código da Unidade Gestora + 2 dígitos da modalidade de compra + 5 dígitos do número da licitação no ano + 4 dígitos do ano da licitação + 5 dígitos do sequencial que identifica o item dentro da licitação.\n\nCódigos de modalidade de compra:\n01 - Convite\n02 - Tomada de Preços\n03 - Concorrência\n04 - Concorrência Internacional\n05 - Pregão\n06 - Dispensa de Licitação\n07 - Inexigibilidade de Licitação\n20 - Concurso\n22 - Tomada de Preços por Técnica e Preço\n33 - Concorrência por Técnica e Preço\n44 - Concorrência Internacional por Técnica e Preço\n-99 - Pregão - Registro de Preços',
+                  'Descrição do item',
+                  'Quantidade do item',
+                  'Valor unitário do item']
+}
+
+# Dicionário Python para dicionario_tabela_contratos_termoAditivo
+dicionario_tabela_contratos_termoAditivo = {
+    'COLUNA': ['Número Contrato', 'Código do Órgão Superior', 'Nome Órgão Superior',
+               'Código Órgão', 'Nome Órgão', 'Código UG', 'Nome UG',
+               'Número Termo Aditivo', 'Data Publicação', 'Objeto'],
+    'DESCRIÇÃO': ['Número que identifica o contrato no ComprasNet',
+                  'Código do Órgão Superior responsável pela licitação\nÓRGÃO SUPERIOR - Unidade da Administração Direta que tenha entidades por ele supervisionadas.\nFonte: Manual do SIAFI',
+                  'Nome do Órgão Superior',
+                  'Código do Órgão responsável pela licitação\nÓRGÃO SUBORDINADO - Entidade supervisionada por um Órgão da Administração Direta.\nFonte: Manual do SIAFI',
+                  'Nome do Órgão',
+                  'Código da Unidade Gestora do contrato.\nUNIDADE GESTORA (UG) - Unidade Orçamentária ou Administrativa que realiza atos de gestão orçamentária, financeira e/ou patrimonial, cujo titular, em consequência, está sujeito a tomada de contas anual na conformidade do disposto nos artigos 81 e 82 do Decreto-lei nr. 200, de 25 de fevereiro de 1967.\nFonte: Manual do SIAFI',
+                  'Nome da Unidade Gestora',
+                  'Número que identifica o termo aditivo no ComprasNet',
+                  'Data da publicação do termo aditivo no DOU',
+                  'Objeto do termo aditivo']
+}
+
+# Dicionário Python para dicionario_tabela_licitacoes_EmpenhosRelacionados
+dicionario_tabela_licitacoes_EmpenhosRelacionados = {
+    'COLUNA': ['Número Licitação', 'Código UG', 'Nome UG', 'Código Modalidade de Compra',
+               'Modalidade compra', 'Número Processo', 'Código Empenho',
+               'Data Emissão Empenho', 'Observação Empenho', 'Valor Empenho (R$)'],
+    'DESCRIÇÃO': ['Número que identifica a licitação no SIASG',
+                  'Código da Unidade Gestora responsável pela licitação.\nUNIDADE GESTORA (UG) - Unidade Orçamentária ou Administrativa que realiza atos de gestão orçamentária, financeira e/ou patrimonial, cujo titular, em consequência, está sujeito a tomada de contas anual na conformidade do disposto nos artigos 81 e 82 do Decreto-lei Nº 200, de 25 de fevereiro de 1967.\nFonte: Manual do SIAFI',
+                  'Nome da Unidade Gestora',
+                  'Código da Modalidade de Compra',
+                  'Modalidades de Compra:\n· Concorrência;\n· Concurso;\n· Convite;\n· Dispensa de Licitação;\n· Inexigibilidade de Licitação;\n· Pregão;\n· Registro de Preço;\n· Tomada de Preços.',
+                  'Número do processo da licitação',
+                  'Código do Empenho da Licitação',
+                  'Data de Emissão do Empenho',
+                  'Observação do Empenho',
+                  'Valor do Empenho (R$)']
+}
+
+# Dicionário Python para dicionario_tabela_licitacoes_ItemLicitacao
+dicionario_tabela_licitacoes_ItemLicitacao = {
+    'COLUNA': ['Número Licitação', 'Código UG', 'Nome UG', 'Código Modalidade de Compra',
+               'Modalidade compra', 'Número Processo', 'Código Órgão', 'Nome Órgão',
+               'Código Item Compra', 'Descrição', 'Quantidade Item', 'Valor Item',
+               'Código Vencedor', 'Nome Vencedor'],
+    'DESCRIÇÃO': ['Número que identifica a licitação no SIASG',
+                  'Código da Unidade Gestora responsável pela licitação.\nUNIDADE GESTORA (UG) - Unidade Orçamentária ou Administrativa que realiza atos de gestão orçamentária, financeira e/ou patrimonial, cujo titular, em consequência, está sujeito a tomada de contas anual na conformidade do disposto nos artigos 81 e 82 do Decreto-lei Nº 200, de 25 de fevereiro de 1967.\nFonte: Manual do SIAFI',
+                  'Nome da Unidade Gestora',
+                  'Código da Modalidade de Compra',
+                  'Modalidades de Compra:\n· Concorrência;\n· Concurso;\n· Convite;\n· Dispensa de Licitação;\n· Inexigibilidade de Licitação;\n· Pregão;\n· Registro de Preço;\n· Tomada de Preços.',
+                  'Número do processo da licitação',
+                  'Código do Órgão responsável pela licitação\nÓRGÃO SUBORDINADO - Entidade supervisionada por um Órgão da Administração Direta.\nFonte: Manual do SIAFI',
+                  'Nome do Órgão',
+                  'Código do item da compra no SIASG. O código do item é um número composto por 22 dígitos, formado através a seguinte lógica: 6 dígitos do código da Unidade Gestora + 2 dígitos da modalidade de compra + 5 dígitos do número da licitação no ano + 4 dígitos do ano da licitação + 5 dígitos do sequencial que identifica o item dentro da licitação.\n\nCódigos de modalidade de compra:\n01 - Convite\n02 - Tomada de Preços\n03 - Concorrência\n04 - Concorrência Internacional\n05 - Pregão\n06 - Dispensa de Licitação\n07 - Inexigibilidade de Licitação\n20 - Concurso\n22 - Tomada de Preços por Técnica e Preço\n33 - Concorrência por Técnica e Preço\n44 - Concorrência Internacional por Técnica e Preço\n-99 - Pregão - Registro de Preços',
+                  'Descrição do item da compra no SIASG',
+                  'Quantidade do item',
+                  'Valor total do item',
+                  'CNPJ do licitante vencedor',
+                  'Nome do CNPJ vencedor']
+}
+
+# Dicionário Python para dicionario_tabela_licitacoes_licitacao
+dicionario_tabela_licitacoes_licitacao = {
+    'COLUNA': ['Número Licitação', 'Código UG', 'Nome UG', 'Código Modalidade de Compra',
+               'Modalidade compra', 'Número do Processo', 'Objeto', 'Situação Licitação',
+               'Código do Órgão Superior', 'Nome Órgão Superior', 'Código Órgão', 'Nome Órgão',
+               'UF/Município', 'Data Resultado Compra', 'Data Abertura', 'Valor Licitação'],
+    'DESCRIÇÃO': ['Número que identifica a licitação no SIASG',
+                  'Código da Unidade Gestora responsável pela licitação.\nUNIDADE GESTORA (UG) - Unidade Orçamentária ou Administrativa que realiza atos de gestão orçamentária, financeira e/ou patrimonial, cujo titular, em consequência, está sujeito a tomada de contas anual na conformidade do disposto nos artigos 81 e 82 do Decreto-lei Nº 200, de 25 de fevereiro de 1967.\nFonte: Manual do SIAFI',
+                  'Nome da Unidade Gestora',
+                  'Código da Modalidade de Compra',
+                  'Modalidades de Compra:\n· Concorrência;\n· Concurso;\n· Convite;\n· Dispensa de Licitação;\n· Inexigibilidade de Licitação;\n· Pregão;\n· Registro de Preço;\n· Tomada de Preços.',
+                  'Número do processo da licitação',
+                  'Objeto da licitação, ou seja, aquilo que se quer comprar, alienar ou contratar',
+                  'Situação em que se encontra o processo licitatório',
+                  'Código do Órgão Superior responsável pela licitação\nÓRGÃO SUPERIOR - Unidade da Administração Direta que tenha entidades por ele supervisionadas.\nFonte: Manual do SIAFI',
+                  'Nome do Órgão Superior',
+                  'Código do Órgão responsável pela licitação\nÓRGÃO SUBORDINADO - Entidade supervisionada por um Órgão da Administração Direta.\nFonte: Manual do SIAFI',
+                  'Nome do Órgão',
+                  'Estado/Município onde ocorre a licitação',
+                  'Data da publicação da Homologação no Diário Oficial da União',
+                  'Data de abertura para envio das Propostas',
+                  'Valor total licitado']
+}
+
+# Dicionário Python para dicionario_tabela_licitacoes_participantes_licitacao
+dicionario_tabela_licitacoes_participantes_licitacao = {
+    'COLUNA': ['Número Licitação', 'Código UG', 'Nome UG', 'Código Modalidade de Compra',
+               'Modalidade compra', 'Número Processo', 'Código Órgão', 'Nome Órgão',
+               'Código Item Compra', 'Descrição Item Compra', 'CNPJ Participante',
+               'Nome Participante', 'Flag Vencedor'],
+    'DESCRIÇÃO': ['Número que identifica a licitação no SIASG',
+                  'Código da Unidade Gestora responsável pela licitação.\nUNIDADE GESTORA (UG) - Unidade Orçamentária ou Administrativa que realiza atos de gestão orçamentária, financeira e/ou patrimonial, cujo titular, em consequência, está sujeito a tomada de contas anual na conformidade do disposto nos artigos 81 e 82 do Decreto-lei Nº 200, de 25 de fevereiro de 1967.\nFonte: Manual do SIAFI',
+                  'Nome da Unidade Gestora',
+                  'Código da Modalidade de Compra',
+                  'Modalidades de Compra:\n· Concorrência;\n· Concurso;\n· Convite;\n· Dispensa de Licitação;\n· Inexigibilidade de Licitação;\n· Pregão;\n· Registro de Preço;\n· Tomada de Preços.',
+                  'Número do processo da licitação',
+                  'Código do Órgão responsável pela licitação\nÓRGÃO SUBORDINADO - Entidade supervisionada por um Órgão da Administração Direta.\nFonte: Manual do SIAFI',
+                  'Nome do Órgão',
+                  'Código do item da compra no SIASG',
+                  'Descrição do item da compra no SIASG',
+                  'CNPJ do participante na licitação',
+                  'Nome do CNPJ do participante',
+                  'Indica se o participante é vencedor "SIM" ou "NÃO"']
+}
+
+
+contratos_compras_dicionario_colunas = pd.DataFrame(dicionario_tabela_contratos_compras)
+contratos_itemCompra_dicionario_colunas = pd.DataFrame(dicionario_tabela_contratos_itemCompra)
+contratos_termoAditivo_dicionario_colunas = pd.DataFrame(dicionario_tabela_contratos_termoAditivo)
+licitacoes_EmpenhosRelacionados_dicionario_colunas = pd.DataFrame(dicionario_tabela_licitacoes_EmpenhosRelacionados)
+licitacoes_ItemLicitacao_dicionario_colunas = pd.DataFrame(dicionario_tabela_licitacoes_ItemLicitacao)
+licitacoes_licitacao_dicionario_colunas = pd.DataFrame(dicionario_tabela_licitacoes_licitacao)
+licitacoes_participantes_licitacao_dicionario_colunas = pd.DataFrame(dicionario_tabela_licitacoes_participantes_licitacao)
+
+
+contratos_compras_SQL_COLUMNS = {}
+contratos_itemCompra_SQL_COLUMNS = {}
+contratos_termoAditivo_SQL_COLUMNS = {}
+licitacoes_EmpenhosRelacionados_SQL_COLUMNS = {}
+licitacoes_ItemLicitacao_SQL_COLUMNS = {}
+licitacoes_licitacao_SQL_COLUMNS = {}
+licitacoes_participantes_licitacao_SQL_COLUMNS = {}
+
+for each_column in dicionario_tabela_contratos_compras['COLUNA']:
+    contratos_compras_SQL_COLUMNS[each_column] = to_snake_case(each_column)
+
+for each_column in dicionario_tabela_contratos_itemCompra['COLUNA']:
+    contratos_itemCompra_SQL_COLUMNS[each_column] = to_snake_case(each_column)
+
+for each_column in dicionario_tabela_contratos_termoAditivo['COLUNA']:
+    contratos_termoAditivo_SQL_COLUMNS[each_column] = to_snake_case(each_column)
+
+for each_column in dicionario_tabela_licitacoes_EmpenhosRelacionados['COLUNA']:
+    licitacoes_EmpenhosRelacionados_SQL_COLUMNS[each_column] = to_snake_case(each_column)
+
+for each_column in dicionario_tabela_licitacoes_ItemLicitacao['COLUNA']:
+    licitacoes_ItemLicitacao_SQL_COLUMNS[each_column] = to_snake_case(each_column)
+
+for each_column in dicionario_tabela_licitacoes_licitacao['COLUNA']:
+    licitacoes_licitacao_SQL_COLUMNS[each_column] = to_snake_case(each_column)
+
+for each_column in dicionario_tabela_licitacoes_participantes_licitacao['COLUNA']:
+    licitacoes_participantes_licitacao_SQL_COLUMNS[each_column] = to_snake_case(each_column)
+
+
+
+# %%
