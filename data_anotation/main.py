@@ -87,6 +87,20 @@ class DataAnotation:
     def __init__(self) -> None:
 
         self.db_connection = PostgresConnector(DATABASE_URL)
+
+
+        pass
+
+    def read_results(self):
+        self.df_sancioned = pd.read_csv('df_sancioned.csv')
+        pass
+
+
+    def find_fraud_process(self):
+        '''
+        Método para encontrar as licitações referenciadas nos processos
+        encontrados no diário oficial
+        '''
         self.df_sancioned = self.parse_metadata()
         self.download_pdf_data(self.df_sancioned)
         self.LLM_model = LLMPromptModel(api_key=DEEP_SEEK_API_KEY,
@@ -95,8 +109,6 @@ class DataAnotation:
                                           )
         self.extract_text_from_diario_oficial()
         self.df_sancioned.to_csv('df_sancioned.csv', index=False)
-
-        pass
 
     def downloadDiarioOficial(self, ano, mes, dia, pagina, id, secao):
 
@@ -380,8 +392,6 @@ class LLMPromptModel:
 
 
 D = DataAnotation()
+D.read_results()
 
-df = D.parse_metadata()
-
-len(df['num_processo'].unique())
 # %%
