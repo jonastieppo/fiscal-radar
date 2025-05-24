@@ -41,3 +41,11 @@ secrets.json
 /dados
 
 .env
+
+/data_anotation/diario_oficial
+
+!requirements.txt
+
+prompt_degug_*.txt
+data_anotation/backup/df_sancioned.csv
+data_anotation/df_sancioned.csv
