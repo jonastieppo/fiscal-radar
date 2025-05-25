@@ -5,7 +5,8 @@ import dask.dataframe as dd
 import sqlalchemy
 import pandas as pd
 import psycopg2
-
+import re
+import tqdm
 def extrair_zips(pasta):
     """
     Extrai o conteúdo de todos os arquivos .zip encontrados na pasta especificada.
@@ -401,3 +402,189 @@ def insert_rows_in_database(df_to_insert : pd.DataFrame | dd.DataFrame, table_na
         if conn:
             conn.close()
             print("Database connection closed.")
+
+
+# Helper function to convert column names to snake_case
+def to_snake_case(name):
+    name = name.lower()
+    accents = {'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'â': 'a', 'ê': 'e', 'î': 'i', 'ô': 'o', 'û': 'u', 'ã': 'a', 'õ': 'o', 'ç': 'c'}
+    for char_accent, char_simple in accents.items():
+        name = name.replace(char_accent, char_simple)
+    name = re.sub(r'\s*\(.*\)\s*$', '', name) # Remove content in parentheses at the end of the string
+    name = name.replace(' ', '_').replace('-', '_').replace('/', '_').replace('.', '')
+    name = re.sub(r'_+', '_', name) # Replace multiple underscores with single
+    name = name.strip('_')
+    return name
+
+# Helper function to generate table name from dictionary key
+def get_table_name(dict_key_name):
+    name_part = dict_key_name.replace('dicionario_tabela_', '')
+    # Convert snake_case or mixedCase to CamelCase
+    # e.g., contratos_compras -> ContratosCompras
+    # e.g., contratos_itemCompra -> ContratosItemCompra
+    # e.g., licitacoes_EmpenhosRelacionados -> LicitacoesEmpenhosRelacionados
+    
+    # First, handle potential CamelCase parts already present
+    name_part = re.sub(r'([a-z])([A-Z])', r'\1_\2', name_part)
+    
+    parts = name_part.split('_')
+    return "".join(part.capitalize() for part in parts)
+
+def find_date_columns(column_name: str) -> bool:
+    '''
+    Find, by re, if a certain column is from the type date.
+
+    For example, if the column name contains the word
+    Date/Data (portuguese) it is a Date column.
+    '''
+    # Regex to find 'data' or 'date' as whole words, case-insensitive
+    # \b ensures word boundaries, so 'database' wouldn't match.
+    pattern = r'\b(data|date)\b'
+    if re.search(pattern, column_name, re.IGNORECASE):
+        return True
+    return False
+
+def csv_to_postgree_sql(
+                        csv_path: str,
+                        table_name : str,
+                        columns_dictionary : dict,
+                        db_host : str,
+                        db_user : str,
+                        db_password : str,
+                        db_name : str,
+                        schema = 'dsa',                        
+                        ):
+
+    df = pd.read_csv(csv_path,
+                sep=';',
+                encoding='cp1252',
+                decimal=',',
+                )
+    
+    date_columns = [col for col in df.columns if find_date_columns(col)]
+    df = date_convertion_pandas(df=df, date_columns=date_columns)
+
+    #  assumes that the daframe columns has the same order as
+    # the dictionary key-value pairs. 
+    # I was checked, and for licitacao/compras it occurs 
+    columns_in_table = [v for  _,v in columns_dictionary.items()]
+
+    # Establish the connection
+    try:
+        conn = psycopg2.connect(host=db_host, database=db_name, user=db_user, password=db_password)
+        cur = conn.cursor()
+        
+        # insert the rows
+    
+        data_to_insert = [tuple(row) for row in df.values]
+
+        insert_template = f'''
+        INSERT INTO {schema}."{table_name}" ({', '.join(columns_in_table)})
+        VALUES ({', '.join(['%s'] * len(columns_in_table))});
+        '''
+        try:
+            print(f"Attempting to insert {len(data_to_insert)} rows using execute_many...")
+            cur.executemany(insert_template, data_to_insert)
+            print("Execute many successful.")
+
+            # Commit the transaction
+            conn.commit()
+            print("Transaction committed successfully.")
+
+        except (psycopg2.Error, Exception) as e:
+            print(f"Database error: {e}")
+            if conn:
+                conn.rollback() # Roll back the transaction on error
+                print("Transaction rolled back due to error.")
+
+
+    except (psycopg2.Error, Exception) as e:
+        print(f"Database error: {e}")
+        if conn:
+            conn.rollback() # Roll back the transaction on error
+            print("Transaction rolled back due to error.")
+
+    finally:
+        # Close the cursor and connection
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+            print("Database connection closed.")
+
+def parse_licitacoes_and_insert_in_database(
+                                    root_folder,
+                                    db_host : str,
+                                    db_user : str,
+                                    db_password : str,
+                                    db_name : str,
+                                    schema = 'dsa',
+                                    **dicionaries_sql    
+                                            ):
+    '''
+    Starting from a root folder, find all .csv and insert into the database
+    '''
+    contratos_compras_SQL_COLUMNS = dicionaries_sql.get('contratos_compras_SQL_COLUMNS')
+    contratos_itemCompra_SQL_COLUMNS = dicionaries_sql.get('contratos_itemCompra_SQL_COLUMNS')
+    contratos_termoAditivo_SQL_COLUMNS = dicionaries_sql.get('contratos_termoAditivo_SQL_COLUMNS')
+    licitacoes_EmpenhosRelacionados_SQL_COLUMNS = dicionaries_sql.get('licitacoes_EmpenhosRelacionados_SQL_COLUMNS')
+    licitacoes_ItemLicitacao_SQL_COLUMNS = dicionaries_sql.get('licitacoes_ItemLicitacao_SQL_COLUMNS')
+    licitacoes_licitacao_SQL_COLUMNS = dicionaries_sql.get('licitacoes_licitacao_SQL_COLUMNS')
+    licitacoes_participantes_licitacao_SQL_COLUMNS = dicionaries_sql.get('licitacoes_participantes_licitacao_SQL_COLUMNS')
+
+    print('''
+====================================================================
+        INICIANDO O INSERT DOS DADOS DE COMPRAS/LITACOES
+====================================================================
+''')
+    for folder, subfolder, files in tqdm.tqdm(os.walk(root_folder)):
+        for file in tqdm.tqdm(files):
+            if file.endswith('.csv'):
+                csv_path = os.path.join(folder, file)
+                print(f'''
+.....................................
+| Insert para: {file}               |
+.....................................
+            ''')
+
+                if file.endswith('Compras.csv'):
+                    columns_dictionary = contratos_compras_SQL_COLUMNS
+                    table_name = get_table_name("dicionario_tabela_contratos_compras")
+
+                elif file.endswith('ItemCompra.csv'):
+                    columns_dictionary = contratos_itemCompra_SQL_COLUMNS
+                    table_name = get_table_name("dicionario_tabela_contratos_itemCompra")
+
+                elif file.endswith('TermoAditivo.csv'):
+                    columns_dictionary = contratos_termoAditivo_SQL_COLUMNS
+                    table_name = get_table_name("dicionario_tabela_contratos_termoAditivo")
+
+                elif file.endswith('EmpenhosRelacionados.csv'):
+                    columns_dictionary = licitacoes_EmpenhosRelacionados_SQL_COLUMNS
+                    table_name = get_table_name("dicionario_tabela_licitacoes_EmpenhosRelacionados")
+
+                elif file.endswith('ItemLicitacao.csv'):
+                    columns_dictionary = licitacoes_ItemLicitacao_SQL_COLUMNS
+                    table_name = get_table_name("dicionario_tabela_licitacoes_ItemLicitacao")
+
+                elif file.endswith('_Licitação.csv'):
+                    columns_dictionary = licitacoes_licitacao_SQL_COLUMNS
+                    table_name = get_table_name("dicionario_tabela_licitacoes_licitacao")
+
+                elif file.endswith('_ParticipantesLicitação.csv'):
+                    columns_dictionary = licitacoes_participantes_licitacao_SQL_COLUMNS
+                    table_name = get_table_name("dicionario_tabela_licitacoes_participantes_licitacao")
+
+                else:
+                    continue
+
+                csv_to_postgree_sql(
+                    csv_path=csv_path,
+                    table_name=table_name,
+                    columns_dictionary=columns_dictionary,
+                    db_host=db_host,
+                    db_user=db_user,
+                    db_password=db_password,
+                    db_name=db_name
+                )
+

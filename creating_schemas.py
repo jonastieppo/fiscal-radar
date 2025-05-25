@@ -1,8 +1,11 @@
 # %%
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, Text, Numeric, Date, BigInteger, Boolean, text
+import re
 from sqlalchemy.dialects import postgresql
 from dotenv import load_dotenv
 import os
+from helper import to_snake_case, get_table_name
+
 load_dotenv()
 DATABASE_URL = os.environ.get("DATABASE_URL")
 print(DATABASE_URL)
@@ -142,6 +145,158 @@ dsa_nfe_items_table = Table(
     Column("valor_total", Numeric, nullable=True), # 211037 non-null float64 -> Numeric for precision
     schema='dsa' # Specify the schema
 )
+
+
+contratos_compras_table = Table(
+    get_table_name('dicionario_tabela_contratos_compras'),
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True, nullable=False, unique=True),
+    Column(to_snake_case("Número do Contrato"), Text, nullable=False),
+    Column(to_snake_case("Objeto"), Text, nullable=True),
+    Column(to_snake_case("Fundamento legal"), Text, nullable=True),
+    Column(to_snake_case("Modalidade de compra"), Text, nullable=True),
+    Column(to_snake_case("Situação Contrato"), Text, nullable=True),
+    Column(to_snake_case("Código do Órgão Superior"), Text, nullable=True),
+    Column(to_snake_case("Nome Órgão Superior"), Text, nullable=True),
+    Column(to_snake_case("Código Órgão"), Integer, nullable=True),
+    Column(to_snake_case("Nome Órgão"), Text, nullable=True),
+    Column(to_snake_case("Código UG"), Integer, nullable=False),
+    Column(to_snake_case("Nome UG"), Text, nullable=True),
+    Column(to_snake_case("Data Assinatura Contrato"), Date, nullable=True),
+    Column(to_snake_case("Data Publicação DOU"), Date, nullable=True),
+    Column(to_snake_case("Data Início da Vigência"), Date, nullable=True),
+    Column(to_snake_case("Data Fim da Vigência"), Date, nullable=True),
+    Column(to_snake_case("Código Contratado"), Text, nullable=True), 
+    Column(to_snake_case("Nome Contratado"), Text, nullable=True),
+    Column(to_snake_case("Valor Inicial da Compra"), Numeric, nullable=True),
+    Column(to_snake_case("Valor Final da Compra"), Numeric, nullable=True),
+    Column(to_snake_case("Número da Licitação"), Text, nullable=True),
+    Column(to_snake_case("Código UG Licitação"), Text, nullable=True),
+    Column(to_snake_case("Nome UG Licitação"), Text, nullable=True),
+    Column(to_snake_case("Código Modalidade Compra Licitação"), Text, nullable=True),
+    Column(to_snake_case("Modalidade Compra Licitação"), Text, nullable=True),
+    schema='dsa'
+)
+
+contratos_item_compra_table = Table(
+    get_table_name('dicionario_tabela_contratos_itemCompra'),
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True, nullable=False, unique=True),
+    Column(to_snake_case("Número Contrato"), Text, nullable=True),
+    Column(to_snake_case("Código Órgão"), Text, nullable=True),
+    Column(to_snake_case("Nome Órgão"), Text, nullable=True),
+    Column(to_snake_case("Código UG"), Text, nullable=True),
+    Column(to_snake_case("Nome UG"), Text, nullable=True),
+    Column(to_snake_case("Código Item Compra"), Text, nullable=True), # Structured 22-digit code
+    Column(to_snake_case("Descrição Item Compra"), Text, nullable=True),
+    Column(to_snake_case("Descrição Complementar Item Compra"), Text, nullable=True),
+    Column(to_snake_case("Quantidade Item"), Text, nullable=True), 
+    Column(to_snake_case("Valor Item"), Numeric, nullable=True),
+    schema='dsa'
+)
+
+contratos_termo_aditivo_table = Table(
+    get_table_name('dicionario_tabela_contratos_termoAditivo'),
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True, nullable=False, unique=True),
+    Column(to_snake_case("Número Contrato"), Text, nullable=True),
+    Column(to_snake_case("Código do Órgão Superior"), Text, nullable=True),
+    Column(to_snake_case("Nome Órgão Superior"), Text, nullable=True),
+    Column(to_snake_case("Código Órgão"), Text, nullable=True),
+    Column(to_snake_case("Nome Órgão"), Text, nullable=True),
+    Column(to_snake_case("Código UG"), Text, nullable=True),
+    Column(to_snake_case("Nome UG"), Text, nullable=True),
+    Column(to_snake_case("Número Termo Aditivo"), Text, nullable=True),
+    Column(to_snake_case("Data Publicação"), Date, nullable=True),
+    Column(to_snake_case("Objeto"), Text, nullable=True),
+    schema='dsa'
+)
+
+
+licitacoes_empenhos_relacionados_table = Table(
+    get_table_name('dicionario_tabela_licitacoes_EmpenhosRelacionados'),
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True, nullable=False, unique=True),
+    Column(to_snake_case("Número Licitação"), Text, nullable=True),
+    Column(to_snake_case("Código UG"), Text, nullable=True),
+    Column(to_snake_case("Nome UG"), Text, nullable=True),
+    Column(to_snake_case("Código Modalidade de Compra"), Text, nullable=True),
+    Column(to_snake_case("Modalidade compra"), Text, nullable=True),
+    Column(to_snake_case("Número Processo"), Text, nullable=True),
+    Column(to_snake_case("Código Empenho"), Text, nullable=True),
+    Column(to_snake_case("Data Emissão Empenho"), Date, nullable=True),
+    Column(to_snake_case("Observação Empenho"), Text, nullable=True),
+    Column(to_snake_case("Valor Empenho (R$)"), Text, nullable=True),
+    schema='dsa'
+)
+
+
+licitacoes_item_licitacao_table = Table(
+    get_table_name('dicionario_tabela_licitacoes_ItemLicitacao'),
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True, nullable=False, unique=True),
+    Column(to_snake_case("Número Licitação"), Text, nullable=True),
+    Column(to_snake_case("Código UG"), Text, nullable=True),
+    Column(to_snake_case("Nome UG"), Text, nullable=True),
+    Column(to_snake_case("Código Modalidade de Compra"), Text, nullable=True),
+    Column(to_snake_case("Modalidade compra"), Text, nullable=True),
+    Column(to_snake_case("Número Processo"), Text, nullable=True),
+    Column(to_snake_case("Código Órgão"), Text, nullable=True),
+    Column(to_snake_case("Nome Órgão"), Text, nullable=True),
+    Column(to_snake_case("Código Item Compra"), Text, nullable=True), # Structured 22-digit code
+    Column(to_snake_case("Descrição"), Text, nullable=True),
+    Column(to_snake_case("Quantidade Item"), Text, nullable=True), # Assuming integer quantity
+    Column(to_snake_case("Valor Item"), Numeric, nullable=True),
+    Column(to_snake_case("Código Vencedor"), Text, nullable=True), # CNPJ
+    Column(to_snake_case("Nome Vencedor"), Text, nullable=True),
+    schema='dsa'
+)
+
+licitacoes_licitacao_table = Table(
+    get_table_name('dicionario_tabela_licitacoes_licitacao'),
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True, nullable=False, unique=True),
+    Column(to_snake_case("Número Licitação"), Text, nullable=True),
+    Column(to_snake_case("Código UG"), Text, nullable=True),
+    Column(to_snake_case("Nome UG"), Text, nullable=True),
+    Column(to_snake_case("Código Modalidade de Compra"), Text, nullable=True),
+    Column(to_snake_case("Modalidade compra"), Text, nullable=True),
+    Column(to_snake_case("Número do Processo"), Text, nullable=True),
+    Column(to_snake_case("Objeto"), Text, nullable=True),
+    Column(to_snake_case("Situação Licitação"), Text, nullable=True),
+    Column(to_snake_case("Código do Órgão Superior"), Text, nullable=True),
+    Column(to_snake_case("Nome Órgão Superior"), Text, nullable=True),
+    Column(to_snake_case("Código Órgão"), Text, nullable=True),
+    Column(to_snake_case("Nome Órgão"), Text, nullable=True),
+    Column(to_snake_case("UF"), Text, nullable=True),
+    Column(to_snake_case("Município"), Text, nullable=True),
+    Column(to_snake_case("Data Resultado Compra"), Date, nullable=True),
+    Column(to_snake_case("Data Abertura"), Date, nullable=True),
+    Column(to_snake_case("Valor Licitação"), Numeric, nullable=True),
+    schema='dsa'
+)
+
+
+licitacoes_participantes_licitacao_table = Table(
+    get_table_name('dicionario_tabela_licitacoes_participantes_licitacao'),
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True, nullable=False, unique=True),
+    Column(to_snake_case("Número Licitação"), Text, nullable=True),
+    Column(to_snake_case("Código UG"), Text, nullable=True),
+    Column(to_snake_case("Nome UG"), Text, nullable=True),
+    Column(to_snake_case("Código Modalidade de Compra"), Text, nullable=True),
+    Column(to_snake_case("Modalidade compra"), Text, nullable=True),
+    Column(to_snake_case("Número Processo"), Text, nullable=True),
+    Column(to_snake_case("Código Órgão"), Text, nullable=True),
+    Column(to_snake_case("Nome Órgão"), Text, nullable=True),
+    Column(to_snake_case("Código Item Compra"), Text, nullable=True),
+    Column(to_snake_case("Descrição Item Compra"), Text, nullable=True),
+    Column(to_snake_case("CNPJ Participante"), Text, nullable=True), # CNPJ
+    Column(to_snake_case("Nome Participante"), Text, nullable=True),
+    Column(to_snake_case("Flag Vencedor"), Text, nullable=True), # "SIM" / "NÃO"
+    schema='dsa'
+)
+
 
 metadata.create_all(engine)
 

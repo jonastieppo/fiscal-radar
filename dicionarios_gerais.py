@@ -337,15 +337,26 @@ dicionario_tabela_contratos_compras = {
 
 # Dicionário Python para dicionario_tabela_contratos_itemCompra
 dicionario_tabela_contratos_itemCompra = {
-    'COLUNA': ['Número Contrato', 'Código Órgão', 'Nome Órgão', 'Código UG', 'Nome UG',
-               'Código Item Compra', 'Descrição Item Compra', 'Quantidade Item', 'Valor Item'],
-    'DESCRIÇÃO': ['Número que identifica o contrato no ComprasNet',
+    'COLUNA': [
+               'Código Órgão', 
+               'Nome Órgão', 
+               'Código UG', 
+               'Nome UG',
+               'Número Contrato', 
+               'Código Item Compra', 
+               'Descrição Item Compra', 
+               'Descrição Complementar Item Compra', 
+               'Quantidade Item', 
+               'Valor Item'],
+    'DESCRIÇÃO': [
                   'Código do Órgão responsável pela licitação\nÓRGÃO SUBORDINADO - Entidade supervisionada por um Órgão da Administração Direta.\nFonte: Manual do SIAFI',
                   'Nome do Órgão',
                   'Código da Unidade Gestora do contrato.\nUNIDADE GESTORA (UG) - Unidade Orçamentária ou Administrativa que realiza atos de gestão orçamentária, financeira e/ou patrimonial, cujo titular, em consequência, está sujeito a tomada de contas anual na conformidade do disposto nos artigos 81 e 82 do Decreto-lei nr. 200, de 25 de fevereiro de 1967.\nFonte: Manual do SIAFI',
                   'Nome da Unidade Gestora',
+                  'Número que identifica o contrato no ComprasNet',
                   'Código do item da compra no SIASG. O código do item é um número composto por 22 dígitos, formado através a seguinte lógica: 6 dígitos do código da Unidade Gestora + 2 dígitos da modalidade de compra + 5 dígitos do número da licitação no ano + 4 dígitos do ano da licitação + 5 dígitos do sequencial que identifica o item dentro da licitação.\n\nCódigos de modalidade de compra:\n01 - Convite\n02 - Tomada de Preços\n03 - Concorrência\n04 - Concorrência Internacional\n05 - Pregão\n06 - Dispensa de Licitação\n07 - Inexigibilidade de Licitação\n20 - Concurso\n22 - Tomada de Preços por Técnica e Preço\n33 - Concorrência por Técnica e Preço\n44 - Concorrência Internacional por Técnica e Preço\n-99 - Pregão - Registro de Preços',
                   'Descrição do item',
+                  'Descrição Complementar Item Compra',
                   'Quantidade do item',
                   'Valor unitário do item']
 }
@@ -411,7 +422,9 @@ dicionario_tabela_licitacoes_licitacao = {
     'COLUNA': ['Número Licitação', 'Código UG', 'Nome UG', 'Código Modalidade de Compra',
                'Modalidade compra', 'Número do Processo', 'Objeto', 'Situação Licitação',
                'Código do Órgão Superior', 'Nome Órgão Superior', 'Código Órgão', 'Nome Órgão',
-               'UF/Município', 'Data Resultado Compra', 'Data Abertura', 'Valor Licitação'],
+               'UF', 
+               'Município', 
+               'Data Resultado Compra', 'Data Abertura', 'Valor Licitação'],
     'DESCRIÇÃO': ['Número que identifica a licitação no SIASG',
                   'Código da Unidade Gestora responsável pela licitação.\nUNIDADE GESTORA (UG) - Unidade Orçamentária ou Administrativa que realiza atos de gestão orçamentária, financeira e/ou patrimonial, cujo titular, em consequência, está sujeito a tomada de contas anual na conformidade do disposto nos artigos 81 e 82 do Decreto-lei Nº 200, de 25 de fevereiro de 1967.\nFonte: Manual do SIAFI',
                   'Nome da Unidade Gestora',
@@ -424,7 +437,8 @@ dicionario_tabela_licitacoes_licitacao = {
                   'Nome do Órgão Superior',
                   'Código do Órgão responsável pela licitação\nÓRGÃO SUBORDINADO - Entidade supervisionada por um Órgão da Administração Direta.\nFonte: Manual do SIAFI',
                   'Nome do Órgão',
-                  'Estado/Município onde ocorre a licitação',
+                  'Estado onde ocorre a licitação',
+                  'Município onde ocorre a licitação',
                   'Data da publicação da Homologação no Diário Oficial da União',
                   'Data de abertura para envio das Propostas',
                   'Valor total licitado']
@@ -470,25 +484,25 @@ licitacoes_licitacao_SQL_COLUMNS = {}
 licitacoes_participantes_licitacao_SQL_COLUMNS = {}
 
 for each_column in dicionario_tabela_contratos_compras['COLUNA']:
-    contratos_compras_SQL_COLUMNS[each_column] = to_snake_case(each_column)
+    contratos_compras_SQL_COLUMNS[each_column.lower()] = to_snake_case(each_column)
 
 for each_column in dicionario_tabela_contratos_itemCompra['COLUNA']:
-    contratos_itemCompra_SQL_COLUMNS[each_column] = to_snake_case(each_column)
+    contratos_itemCompra_SQL_COLUMNS[each_column.lower()] = to_snake_case(each_column)
 
 for each_column in dicionario_tabela_contratos_termoAditivo['COLUNA']:
-    contratos_termoAditivo_SQL_COLUMNS[each_column] = to_snake_case(each_column)
+    contratos_termoAditivo_SQL_COLUMNS[each_column.lower()] = to_snake_case(each_column)
 
 for each_column in dicionario_tabela_licitacoes_EmpenhosRelacionados['COLUNA']:
-    licitacoes_EmpenhosRelacionados_SQL_COLUMNS[each_column] = to_snake_case(each_column)
+    licitacoes_EmpenhosRelacionados_SQL_COLUMNS[each_column.lower()] = to_snake_case(each_column)
 
 for each_column in dicionario_tabela_licitacoes_ItemLicitacao['COLUNA']:
-    licitacoes_ItemLicitacao_SQL_COLUMNS[each_column] = to_snake_case(each_column)
+    licitacoes_ItemLicitacao_SQL_COLUMNS[each_column.lower()] = to_snake_case(each_column)
 
 for each_column in dicionario_tabela_licitacoes_licitacao['COLUNA']:
-    licitacoes_licitacao_SQL_COLUMNS[each_column] = to_snake_case(each_column)
+    licitacoes_licitacao_SQL_COLUMNS[each_column.lower()] = to_snake_case(each_column)
 
 for each_column in dicionario_tabela_licitacoes_participantes_licitacao['COLUNA']:
-    licitacoes_participantes_licitacao_SQL_COLUMNS[each_column] = to_snake_case(each_column)
+    licitacoes_participantes_licitacao_SQL_COLUMNS[each_column.lower()] = to_snake_case(each_column)
 
 
 
