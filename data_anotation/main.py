@@ -15,7 +15,7 @@ import sqlalchemy
 import pandas as pd
 import json
 import tqdm
-
+import json
 load_dotenv(os.path.join(os.getcwd(), '..','.env'))
 
 DEEP_SEEK_API_KEY = os.environ.get("DEEP_SEEK_API_KEY")
@@ -90,6 +90,40 @@ class DataAnotation:
 
 
         pass
+
+    def get_all_cgu_reports(self):
+        
+        MAX_REPORT = 4211 # hard coded for now
+
+        offset = 0
+        while offset*15 < MAX_REPORT:
+            self.download_cgu_report(offset)
+            offset+=1
+
+        
+    
+    def download_cgu_report(self, offset):
+
+        base_url = fr"https://eaud.cgu.gov.br/api/relatorios/pesquisa?colunaOrdenacao=dataPublicacao&direcaoOrdenacao=DESC&tamanhoPagina=15&offset={offset*15}&dataPublicacaoInicio=01%2F01%2F2013&dataPublicacaoFim=30%2F12%2F2023&grupoAtividade%5B%5D=2572&grupoAtividade%5B%5D=12517"
+
+        response = requests.get(base_url, stream=True)
+        json_data =  response.text
+
+        try:
+            python_dict = json.loads(json_data)
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON: {e}")
+
+        def get_pdf(report_number):
+
+            download_url = fr"https://eaud.cgu.gov.br/relatorios/download/{report_number}/"
+            content = requests.get(download_url)
+            with open(os.path.join(os.getcwd(), 'cgu_report', f"report_{report_number}.pdf"), "wb") as f:
+                for chunk in content.iter_content(chunk_size=1024):
+                    if chunk:
+                        f.write(chunk)
+                              
+        [get_pdf(x['id']) for x in python_dict['data']]
 
     def read_results(self):
         self.df_sancioned = pd.read_csv('df_sancioned.csv')
@@ -392,6 +426,5 @@ class LLMPromptModel:
 
 
 D = DataAnotation()
-D.read_results()
-
+D.get_all_cgu_reports()
 # %%

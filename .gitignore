@@ -39,6 +39,7 @@ config.ini
 secrets.json
 
 /dados
+data_anotation/cgu_report
 
 .env
 
