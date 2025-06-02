@@ -25,7 +25,7 @@ This project is designed to download, process, store, and analyze public procure
 ### Data Analysis & Machine Learning:
 - Identifies fiscal notes issued by/to sanctioned entities (CNPJs/CPFs)
 - Initial exploration with Naive Bayes classifier to distinguish fiscal notes (main.py)
-- Advanced Analysis (main2.py):
+- Advanced Analysis (data_anotation/main.py):
   - Parses metadata from sanction records to identify official gazette publications
   - Extracts text from PDF official gazettes
   - Utilizes LLM (DeepSeek API) to identify procurement process numbers in sanction texts
