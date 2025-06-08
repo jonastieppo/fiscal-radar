@@ -50,3 +50,8 @@ data_anotation/cgu_report
 prompt_degug_*.txt
 data_anotation/backup/df_sancioned.csv
 data_anotation/df_sancioned.csv
+data_anotation/cgu_report.md
+data_anotation/dataframe_licitacoes_anotado_v2.csv
+data_anotation/dataframe_licitacoes_anotado.csv
+data_anotation/fraud_numbers.pkl
+data_anotation/logger_licitacao.txt

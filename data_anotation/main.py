@@ -3,6 +3,8 @@ A ideia é fazer download de publicações de diários oficiais, e minerar os pr
 '''
 
 # %%
+import csv
+import pickle
 import os
 import re
 import time
@@ -16,6 +18,7 @@ import pandas as pd
 import json
 import tqdm
 import json
+from IPython.display import display, Markdown
 load_dotenv(os.path.join(os.getcwd(), '..','.env'))
 
 DEEP_SEEK_API_KEY = os.environ.get("DEEP_SEEK_API_KEY")
@@ -87,24 +90,27 @@ class DataAnotation:
     def __init__(self) -> None:
 
         self.db_connection = PostgresConnector(DATABASE_URL)
-
+        self.__connectLLM()
 
         pass
 
-    def get_all_cgu_reports(self):
+    def get_all_cgu_reports(self, only_licitacao=True):
         
         MAX_REPORT = 4211 # hard coded for now
 
         offset = 0
         while offset*15 < MAX_REPORT:
-            self.download_cgu_report(offset)
+            self.download_cgu_report(offset, only_licitacao)
             offset+=1
 
         
     
-    def download_cgu_report(self, offset):
-
-        base_url = fr"https://eaud.cgu.gov.br/api/relatorios/pesquisa?colunaOrdenacao=dataPublicacao&direcaoOrdenacao=DESC&tamanhoPagina=15&offset={offset*15}&dataPublicacaoInicio=01%2F01%2F2013&dataPublicacaoFim=30%2F12%2F2023&grupoAtividade%5B%5D=2572&grupoAtividade%5B%5D=12517"
+    def download_cgu_report(self, offset, only_licitacao :  bool):
+        
+        if not only_licitacao:
+            base_url = fr"https://eaud.cgu.gov.br/api/relatorios/pesquisa?colunaOrdenacao=dataPublicacao&direcaoOrdenacao=DESC&tamanhoPagina=15&offset={offset*15}&dataPublicacaoInicio=01%2F01%2F2013&dataPublicacaoFim=30%2F12%2F2023&grupoAtividade%5B%5D=2572&grupoAtividade%5B%5D=12517"
+        else:
+            base_url = fr"https://eaud.cgu.gov.br/api/relatorios/pesquisa?colunaOrdenacao=dataPublicacao&direcaoOrdenacao=DESC&tamanhoPagina=15&offset={offset*15}&dataPublicacaoInicio=01%2F01%2F2013&dataPublicacaoFim=30%2F12%2F2023&grupoAtividade%5B%5D=12517"
 
         response = requests.get(base_url, stream=True)
         json_data =  response.text
@@ -117,8 +123,14 @@ class DataAnotation:
         def get_pdf(report_number):
 
             download_url = fr"https://eaud.cgu.gov.br/relatorios/download/{report_number}/"
+            print(f"Downloading report {report_number}...")
             content = requests.get(download_url)
-            with open(os.path.join(os.getcwd(), 'cgu_report', f"report_{report_number}.pdf"), "wb") as f:
+            if only_licitacao:
+                report_name = f"report_{report_number}_alerta_licitacao.pdf"
+            else:
+                report_name = f"report_{report_number}_alerta_geral.pdf"
+
+            with open(os.path.join(os.getcwd(), 'cgu_report', report_name), "wb") as f:
                 for chunk in content.iter_content(chunk_size=1024):
                     if chunk:
                         f.write(chunk)
@@ -129,7 +141,11 @@ class DataAnotation:
         self.df_sancioned = pd.read_csv('df_sancioned.csv')
         pass
 
-
+    def __connectLLM(self):
+        self.LLM_model = LLMPromptModel(api_key=DEEP_SEEK_API_KEY,
+                                        base_url='https://api.deepseek.com',
+                                        model_name='deepseek-chat'
+                                          )
     def find_fraud_process(self):
         '''
         Método para encontrar as licitações referenciadas nos processos
@@ -137,10 +153,7 @@ class DataAnotation:
         '''
         self.df_sancioned = self.parse_metadata()
         self.download_pdf_data(self.df_sancioned)
-        self.LLM_model = LLMPromptModel(api_key=DEEP_SEEK_API_KEY,
-                                        base_url='https://api.deepseek.com',
-                                        model_name='deepseek-chat'
-                                          )
+        # self.__connectLLM()
         self.extract_text_from_diario_oficial()
         self.df_sancioned.to_csv('df_sancioned.csv', index=False)
 
@@ -335,6 +348,187 @@ Texto:
                 print(f"Ocorreu um erro para o índice {index}: {e}") # Good to include index in error
 
 
+    def annotate_fraud_reports(self):
+
+        system_prompt = '''
+Analise o documento PDF fornecido emitido pela 'Controladoria-Geral da União (CGU)'. Seu objetivo é extrair informações específicas relacionadas ao processo de licitação auditado e à entidade auditada.
+
+Por favor, identifique e extraia os seguintes detalhes. Se alguma informação não for encontrada no documento, o valor correspondente no JSON deve ser `null`. Não crie ou infira dados que não estejam explicitamente presentes no texto.
+
+1.  **`numero_licitacao`**: Encontre o número oficial do processo de licitação (pregão, compra ou licitação). Este é frequentemente referido como 'Pregão Eletrônico n.º', 'Edital n.º' ou similar. Forneça apenas os dígitos numéricos e o ano, concatenados sem quaisquer símbolos (por exemplo, "31007/2022" deve se tornar "310072022"). Se não encontrado, retorne `null`.
+2.  **`uf`**: Determine a sigla da Unidade da Federação (estado brasileiro) onde a unidade auditada ('Unidade Auditada' ou termo similar) está localizada. Geralmente é um código de duas letras (por exemplo, "SC"). Se não encontrado, retorne `null`.
+3.  **`municipio`**: Identifique o nome do município onde a unidade auditada está localizada. Forneça o nome em letras maiúsculas (por exemplo, "FLORIANOPOLIS"). Se não encontrado, retorne `null`.
+4.  **`nome_orgao`**: Extraia o nome do órgão auditado ('Órgão Auditado' ou 'Unidade Auditada'). Se o nome for muito longo, como 'Instituto Federal de Educação, Ciência e Tecnologia de [Nome do Estado]', tente fornecer uma versão mais curta comumente aceita, como 'Instituto Federal de [Nome do Estado]' (por exemplo, "Instituto Federal de Santa Catarina"). Se não encontrado, retorne `null`.
+5.  **`numero_relatorio`**: Encontre o número de identificação do relatório de avaliação. Este é frequentemente referido como 'Relatório de Avaliação:', 'Nº do Relatório' ou similar. Forneça apenas os dígitos numéricos (por exemplo, "1350994"). Se não encontrado, retorne `null`.
+
+A saída deve ser **apenas** o objeto JSON resultante, sem nenhum texto adicional, marcadores de código (como ```json) ou explicações.
+
+Por exemplo, se o documento contivesse informações levando a:
+Pregão Eletrônico n.º: 31007/2022
+Unidade Auditada: Instituto Federal de Educação, Ciência e Tecnologia de Santa Catarina
+Município/UF: Florianópolis/SC
+Relatório de Avaliação: 1350994
+
+A saída esperada seria estritamente:
+{
+"numero_licitacao" : "310072022",
+"uf" : "SC",
+"municipio" : "FLORIANOPOLIS",
+"nome_orgao" : "Instituto Federal de Santa Catarina",
+"numero_relatorio": "1350994"
+}
+
+Se, por outro lado, o nome do órgão e o número do relatório não fossem encontrados, a saída seria estritamente:
+{
+"numero_licitacao" : "310072022",
+"uf" : "SC",
+"municipio" : "FLORIANOPOLIS",
+"nome_orgao" : null,
+"numero_relatorio": null
+}
+
+Agora, por favor, processe o PDF que será fornecido e retorne as informações **apenas** no formato JSON.
+'''
+        
+        self.responses_cgu = []
+        self.responses_cgu_json = []
+
+        for index,each_pdf in enumerate(os.listdir(os.path.join(os.getcwd(), 'cgu_report', 'licitacao'))):
+            
+            file = os.path.join(os.getcwd(), 'cgu_report', 'licitacao', each_pdf)
+            report_geral_id = each_pdf.split('_')[-1].split('.')[0]
+
+            text = self.extract_text_from_pdf(file)
+            length = len(text)
+            half = length // 2  # Integer division to get the midpoint
+
+            first_half = text[:int(half)]  # From start to midpoint (probably the answerb exits in the first hald of the document)
+                
+            self.responses_cgu.append(self.LLM_model.execute_prompt_with_system(system_prompt,
+                                                                    text))
+            
+            parsed = self.LLM_model.parse_model_output(self.responses_cgu[index])
+            
+            parsed = dict(parsed)
+            parsed['report_geral_id'] = report_geral_id
+
+            self.responses_cgu_json.append(parsed)
+
+            with open('cgu_report.md', 'a', encoding='utf-8') as nf:
+                print(self.responses_cgu_json[index], file=nf)
+
+            #saving the found fraud numbers
+            with open('fraud_numbers.pkl', 'wb') as f:
+                pickle.dump(self.responses_cgu_json, f)
+
+
+    def create_dataframe_licitacoes(self):
+        '''
+
+        '''
+
+        # reading anotted data
+
+        with open('fraud_numbers.pkl', 'rb') as f:
+            responses = pickle.load(f)
+
+        dfs = []
+        for each_response in responses:
+            
+            if each_response == None:
+                continue
+            if each_response['numero_licitacao'] == None:
+                continue
+            try:
+                df = self.__queryForLicitacoes(
+                            numero_licitacao=each_response['numero_licitacao'],
+                            uf=each_response['uf'],
+                            municipio=each_response['municipio'],
+                            nome_orgao=each_response['nome_orgao']
+                            )
+            except Exception as e:
+                df = None
+                print(e)
+
+            if bool(type(df) != 'NoneType'):
+                if bool(type(df) == pd.DataFrame) and len(df) > 0:
+                    df.head()
+                    dfs.append(df)
+
+        self.dataframe_licitacoes_anotado = pd.concat(dfs)
+        
+
+
+    def __queryForLicitacoes(self, numero_licitacao, uf, municipio, nome_orgao):
+        '''
+        Method to make a query and create a dataframe with the results and
+        features meaningfull for data exploration
+        '''
+
+
+        query = f'''
+
+SELECT 
+    ll.numero_do_processo,
+    ll.nome_ug, 
+    ll.modalidade_compra, 
+    ll.objeto, ll.uf, 
+    ll.municipio, 
+    ll.valor_licitacao,
+    lpl.cnpj_participante,
+    ceis.codigo_da_sancao as ceis_sancao,
+    cnep."CODIGO_DA_SANCAO" as cnep_sancao,
+    COUNT(lpl.numero_processo) AS numero_parcitipacoes
+FROM 
+    dsa."LicitacoesLicitacao" AS ll
+INNER JOIN 
+    dsa."LicitacoesParticipantesLicitacao" AS lpl ON ll.numero_do_processo = lpl.numero_processo
+LEFT JOIN
+    dsa."CEIS" as ceis ON CAST(ceis.cpf_ou_cnpj_do_sancionado AS text)  = lpl.cnpj_participante
+LEFT JOIN
+    dsa."CNEP" as cnep ON CAST(cnep."CPF_CNPJ" AS text)  = lpl.cnpj_participante
+WHERE 
+    ll.numero_licitacao = '{numero_licitacao}'
+    AND ll.uf LIKE '%%{uf}%%'
+    AND ll.municipio LIKE '%%{municipio}%%'
+    AND (
+        ll.nome_orgao LIKE '%%{nome_orgao}%%'
+        OR ll.nome_ug LIKE '%%{nome_orgao}%%'
+    )
+GROUP BY
+    ll.numero_do_processo,
+    ll.nome_ug, 
+    ll.modalidade_compra, 
+    ll.objeto, ll.uf, 
+    ll.municipio, 
+    ll.valor_licitacao,
+    lpl.cnpj_participante,
+    ceis.codigo_da_sancao,
+    cnep."CODIGO_DA_SANCAO",
+    ll.numero_do_processo -- Grouping to count participants per bid
+'''
+        
+        with open('logger_licitacao.txt', 'a', encoding='utf-8') as nf:
+                    
+            print(f'''
+    =================================================================
+                        MAKING QUERY FOR
+    numero: {numero_licitacao}
+    uf: {uf}
+    municipio: {municipio}
+    nome_orgao: {nome_orgao}
+
+    **query**
+
+    {query}
+
+    =================================================================
+    ''',
+    file=nf
+    )
+
+        return self.db_connection.execute_select_query(query)
+
 
 
 
@@ -395,23 +589,55 @@ class LLMPromptModel:
             print(f"Error executing prompt with model '{self.model_name}': {e}")
             return ""
         
-    def execute_several_propmpts(self, prompt_texts: list[str]) -> list[str]:
-        """
-        Executes a list of prompts against the specified Ollama model.
-        """
+    def execute_prompt_with_system(self, system_prompt, prompt_text: str)->str:
+
         try:
-            messages = [{"role": "user", "content": prompt} for prompt in prompt_texts] 
             response = self.client.chat.completions.create(
-                model="deepseek-chat",
-                messages=messages,
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt_text} 
+                ],
                 stream=False
             )
 
             return response.choices[0].message.content.strip()
+        
         except Exception as e:
             print(f"Error executing prompt with model '{self.model_name}': {e}")
             return ""
+
+    def execute_several_prompts(self, system_prompt, user_prompts: list[str]) -> list[str]:
+        """
+        Executes a prompt against the specified Ollama model.
+        Each call creates a new, stateless interaction with the model.
+
+        Args:
+            system_prompt (str): Configuration prompt to be sent the LLM.
+            user_prompts (str): The prompt to send to the LLM.
+
+        Returns:
+            str: The content of the model's response. Returns an empty [string] on error.
+        """
+        try:
+            user_p = [{"role": "user", "content": prompt} for prompt in user_prompts]
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    user_p
+                ],
+                stream=False
+            )
+
+            responses = [r.choices[0].message.content.strip() for r in response]
+
+            return responses
         
+        except Exception as e:
+            print(f"Error executing prompt with model '{self.model_name}': {e}")
+            return [""]
+                
     def parse_model_output(self, output):
         # Remove the markdown code block markers
         json_str = output.strip().strip('```json').strip('```').strip()
@@ -427,4 +653,25 @@ class LLMPromptModel:
 
 D = DataAnotation()
 D.get_all_cgu_reports()
+# D.annotate_fraud_reports()
+# D.create_dataframe_licitacoes()
+
+
+# %%
+
+D.dataframe_licitacoes_anotado.to_csv('dataframe_licitacoes_anotado_v2.csv', index=False, 
+                                      
+                                      quotechar='"', quoting=csv.QUOTE_ALL
+                                      
+                                      
+                                      )
+
+
+
+
+# %%
+
+    
+
+
 # %%
