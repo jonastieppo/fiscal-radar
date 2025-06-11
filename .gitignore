@@ -57,3 +57,7 @@ data_anotation/fraud_numbers.pkl
 data_anotation/logger_licitacao.txt
 data_anotation/dataframe_licitacoes_anotadov3.csv
 data_anotation/df_for_prediction.csv
+data_anotation/production_data.csv
+Random Forest.pkl
+Regressão Logística.pkl
+Gradient Boosting.pkl

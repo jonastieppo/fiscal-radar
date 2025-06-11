@@ -12,6 +12,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, roc_auc_score
 import os
+import pickle
 # --- ETAPA 1: CARREGAMENTO E ANÁLISE DOS DADOS ---
 
 # Carregar o dataset a partir do arquivo CSV fornecido
@@ -168,6 +169,11 @@ for model_name, model in models.items():
     plt.xlabel('Previsto')
     plt.ylabel('Verdadeiro')
     plt.show()
+
+    # Salvo o Modelo em Pickle Para Aplicação Futura
+
+    with open(f'{model_name}.pkl', 'wb') as model_file:
+        pickle.dump(pipeline, model_file)
 
 
 # --- ETAPA 4: COMPARAÇÃO FINAL DOS MODELOS ---

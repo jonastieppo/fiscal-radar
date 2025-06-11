@@ -677,6 +677,59 @@ GROUP BY
         return self.db_connection.execute_select_query(query)
 
 
+    def generateMockProductionData(self):
+        
+        query = '''
+SELECT 
+    ll.numero_do_processo,
+    ll.nome_ug, 
+    ll.modalidade_compra, 
+    ll.objeto, 
+    ll.uf, 
+    ll.municipio, 
+    ll.valor_licitacao,
+    ceis.codigo_da_sancao AS ceis_sancao,
+    cnep."CODIGO_DA_SANCAO" AS cnep_sancao,
+    COUNT(lpl.numero_processo) AS numero_parcitipacoes
+FROM 
+    (
+SELECT *
+FROM dsa."LicitacoesLicitacao" as llsub
+TABLESAMPLE SYSTEM (10)
+where llsub.numero_licitacao != '0'
+and llsub.numero_licitacao != '-'
+and llsub.numero_licitacao IS NOT NULL
+and llsub.valor_licitacao != 0
+LIMIT 10000
+	) as ll
+INNER JOIN 
+    dsa."LicitacoesParticipantesLicitacao" AS lpl 
+    ON ll.numero_do_processo = lpl.numero_processo
+LEFT JOIN
+    dsa."CEIS" AS ceis 
+    ON CAST(ceis.cpf_ou_cnpj_do_sancionado AS TEXT) = lpl.cnpj_participante
+LEFT JOIN
+    dsa."CNEP" AS cnep 
+    ON CAST(cnep."CPF_CNPJ" AS TEXT) = lpl.cnpj_participante
+GROUP BY
+    ll.numero_do_processo,
+    ll.nome_ug, 
+    ll.modalidade_compra, 
+    ll.objeto, 
+    ll.uf, 
+    ll.municipio, 
+    ll.valor_licitacao,
+    ceis.codigo_da_sancao,
+    cnep."CODIGO_DA_SANCAO"
+LIMIT 20000
+'''
+
+        df = self.db_connection.execute_select_query(query)
+        df.to_csv('production_data.csv', 
+                  index=False,
+                  quotechar='"', 
+                  quoting=csv.QUOTE_ALL
+                  )
 
 
     def extract_text_from_pdf(self, pdf_path: str) -> str:
@@ -909,7 +962,8 @@ D = DataAnotation()
 # D.get_all_cgu_reports(only_licitacao=True)
 # D.annotate_fraud_reports()
 # D.create_dataframe_licitacoes()
-D.construct_database_for_prediction()
+# D.construct_database_for_prediction()
+D.generateMockProductionData()
 # Class = DataBaseSanitization()
 
 # %%
