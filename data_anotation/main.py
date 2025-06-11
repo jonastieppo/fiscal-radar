@@ -15,9 +15,12 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import sqlalchemy
 import pandas as pd
+from psycopg2.extras import execute_values
 import json
 import tqdm
 import json
+import nltk
+nltk.download('stopwords')
 from IPython.display import display, Markdown
 load_dotenv(os.path.join(os.getcwd(), '..','.env'))
 
@@ -81,6 +84,69 @@ class PostgresConnector:
         except Exception as e:
             print(f"Error executing query: {e}")
             return None
+        
+    def execute_update(self, update_query: str, params: dict = None) -> bool:
+        """
+        Executes an SQL query that modifies data (e.g., UPDATE, INSERT, DELETE).
+
+        Args:
+            update_query (str): The SQL query string to execute.
+            params (dict, optional): A dictionary of parameters to bind to the query.
+                                     Defaults to None.
+
+        Returns:
+            bool: True if the query was executed and committed successfully, False otherwise.
+        """
+        if self.connection is None or self.connection.closed:
+            print("Error: Connection is not active. Call connect() or use a 'with' statement.")
+            return False
+        try:
+            # For DML statements, it's good practice to use text() for safety and compatibility
+            stmt = sqlalchemy.text(update_query)
+            self.connection.execute(stmt, params if params else {})
+            self.connection.commit()  # Commit the transaction
+            # print(f"Query executed and committed successfully: {update_query}") # Optional
+            return True
+        except Exception as e:
+            if self.connection and not self.connection.closed:
+                self.connection.rollback()  # Rollback in case of error
+            print(f"Error executing update query: {e}. Transaction rolled back.")
+            return False
+
+    def execute_update_several(self, query: str, update_data: list) -> bool:
+        """
+        Executes a batch update query using psycopg2.extras.execute_values.
+        This is particularly useful for PostgreSQL's VALUES clause for bulk operations.
+
+        Args:
+            query (str): The SQL query string, with a %s placeholder for execute_values.
+            update_data (list): A list of tuples (or lists of lists) containing the data
+                                for the VALUES clause. Each tuple/list represents a row.
+        Returns:
+            bool: True if the operation was successful and committed, False otherwise.
+        """
+        if self.connection is None or self.connection.closed:
+            print("Error: Connection is not active. Call connect() or use a 'with' statement.")
+            return False
+
+        # Access the underlying raw DBAPI (psycopg2) connection
+        raw_dbapi_connection = self.connection.connection
+
+        try:
+            # The transaction is managed by the SQLAlchemy connection (self.connection)
+            with raw_dbapi_connection.cursor() as cursor:
+                execute_values(cursor, query, update_data)
+            
+            self.connection.commit()  # Commit the transaction via SQLAlchemy
+            return True
+        except Exception as e:
+            print(f"Error executing batch update query with execute_values: {e}")
+            if self.connection and not self.connection.closed:
+                try:
+                    self.connection.rollback()  # Rollback the transaction via SQLAlchemy
+                except Exception as rb_exc:
+                    print(f"Error during rollback: {rb_exc}")
+            return False
 
     def __destroy__(self):
         self.disconnect()
@@ -125,11 +191,7 @@ class DataAnotation:
             download_url = fr"https://eaud.cgu.gov.br/relatorios/download/{report_number}/"
             print(f"Downloading report {report_number}...")
             content = requests.get(download_url)
-            if only_licitacao:
-                report_name = f"report_{report_number}_alerta_licitacao.pdf"
-            else:
-                report_name = f"report_{report_number}_alerta_geral.pdf"
-
+            report_name = f"report_{report_number}.pdf"
             with open(os.path.join(os.getcwd(), 'cgu_report', report_name), "wb") as f:
                 for chunk in content.iter_content(chunk_size=1024):
                     if chunk:
@@ -355,8 +417,7 @@ Analise o documento PDF fornecido emitido pela 'Controladoria-Geral da União (C
 
 Por favor, identifique e extraia os seguintes detalhes. Se alguma informação não for encontrada no documento, o valor correspondente no JSON deve ser `null`. Não crie ou infira dados que não estejam explicitamente presentes no texto.
 
-1.  **`numero_licitacao`**: Encontre o número oficial do processo de licitação (pregão, compra ou licitação). Este é frequentemente referido como 'Pregão Eletrônico n.º', 'Edital n.º' ou similar. Forneça apenas os dígitos numéricos e o ano, concatenados sem quaisquer símbolos (por exemplo, "31007/2022" deve se tornar "310072022"). Se não encontrado, retorne `null`.
-2.  **`uf`**: Determine a sigla da Unidade da Federação (estado brasileiro) onde a unidade auditada ('Unidade Auditada' ou termo similar) está localizada. Geralmente é um código de duas letras (por exemplo, "SC"). Se não encontrado, retorne `null`.
+1.  **`numero_licitacao`**: Encontre o número oficial do processo de licitação (pregão, compra ou licitação). Este é frequentemente referido como 'Pregão Eletrônico n.º', 'Edital n.º' ou similar. O número da licitação deve ignorar quaisquer zeros à esquerda (por exemplo, 004155 deve se tornar 4155). Forneça este número e o ano, concatenados sem quaisquer símbolos (por exemplo, "Pregão n.º 004155/2023" deve se tornar "41552023"). Se não encontrado, retorne `null`.
 3.  **`municipio`**: Identifique o nome do município onde a unidade auditada está localizada. Forneça o nome em letras maiúsculas (por exemplo, "FLORIANOPOLIS"). Se não encontrado, retorne `null`.
 4.  **`nome_orgao`**: Extraia o nome do órgão auditado ('Órgão Auditado' ou 'Unidade Auditada'). Se o nome for muito longo, como 'Instituto Federal de Educação, Ciência e Tecnologia de [Nome do Estado]', tente fornecer uma versão mais curta comumente aceita, como 'Instituto Federal de [Nome do Estado]' (por exemplo, "Instituto Federal de Santa Catarina"). Se não encontrado, retorne `null`.
 5.  **`numero_relatorio`**: Encontre o número de identificação do relatório de avaliação. Este é frequentemente referido como 'Relatório de Avaliação:', 'Nº do Relatório' ou similar. Forneça apenas os dígitos numéricos (por exemplo, "1350994"). Se não encontrado, retorne `null`.
@@ -393,9 +454,9 @@ Agora, por favor, processe o PDF que será fornecido e retorne as informações 
         self.responses_cgu = []
         self.responses_cgu_json = []
 
-        for index,each_pdf in enumerate(os.listdir(os.path.join(os.getcwd(), 'cgu_report', 'licitacao'))):
+        for index,each_pdf in enumerate(os.listdir(os.path.join(os.getcwd(), 'cgu_report'))):
             
-            file = os.path.join(os.getcwd(), 'cgu_report', 'licitacao', each_pdf)
+            file = os.path.join(os.getcwd(), 'cgu_report', each_pdf)
             report_geral_id = each_pdf.split('_')[-1].split('.')[0]
 
             text = self.extract_text_from_pdf(file)
@@ -405,7 +466,7 @@ Agora, por favor, processe o PDF que será fornecido e retorne as informações 
             first_half = text[:int(half)]  # From start to midpoint (probably the answerb exits in the first hald of the document)
                 
             self.responses_cgu.append(self.LLM_model.execute_prompt_with_system(system_prompt,
-                                                                    text))
+                                                                    first_half))
             
             parsed = self.LLM_model.parse_model_output(self.responses_cgu[index])
             
@@ -421,6 +482,71 @@ Agora, por favor, processe o PDF que será fornecido e retorne as informações 
             with open('fraud_numbers.pkl', 'wb') as f:
                 pickle.dump(self.responses_cgu_json, f)
 
+    def construct_database_for_prediction(self):
+
+        df__no_fraud = self.__pick_random_licitacoes()
+        df_fraud = pd.read_csv('dataframe_licitacoes_anotado.csv')
+
+        df__no_fraud['is_fraud'] = 0
+        df_fraud['is_fraud'] = 1
+
+        df = pd.concat([df__no_fraud, df_fraud])
+
+        df.to_csv('df_for_prediction.csv', index=False,
+            quotechar='"', 
+            quoting=csv.QUOTE_ALL         
+                  )
+
+    def __pick_random_licitacoes(self):
+
+        query =  '''
+SELECT 
+    ll.numero_do_processo,
+    ll.nome_ug, 
+    ll.modalidade_compra, 
+    ll.objeto, 
+    ll.uf, 
+    ll.municipio, 
+    ll.valor_licitacao,
+    ceis.codigo_da_sancao AS ceis_sancao,
+    cnep."CODIGO_DA_SANCAO" AS cnep_sancao,
+    COUNT(lpl.numero_processo) AS numero_parcitipacoes
+FROM 
+    (
+SELECT *
+FROM dsa."LicitacoesLicitacao" as llsub
+TABLESAMPLE SYSTEM (1)
+where llsub.numero_licitacao != '0'
+and llsub.numero_licitacao != '-'
+and llsub.numero_licitacao IS NOT NULL
+and llsub.valor_licitacao != 0
+LIMIT 200
+	) as ll
+INNER JOIN 
+    dsa."LicitacoesParticipantesLicitacao" AS lpl 
+    ON ll.numero_do_processo = lpl.numero_processo
+LEFT JOIN
+    dsa."CEIS" AS ceis 
+    ON CAST(ceis.cpf_ou_cnpj_do_sancionado AS TEXT) = lpl.cnpj_participante
+LEFT JOIN
+    dsa."CNEP" AS cnep 
+    ON CAST(cnep."CPF_CNPJ" AS TEXT) = lpl.cnpj_participante
+GROUP BY
+    ll.numero_do_processo,
+    ll.nome_ug, 
+    ll.modalidade_compra, 
+    ll.objeto, 
+    ll.uf, 
+    ll.municipio, 
+    ll.valor_licitacao,
+    ceis.codigo_da_sancao,
+    cnep."CODIGO_DA_SANCAO"
+LIMIT 1000
+'''
+
+        df = self.db_connection.execute_select_query(query)
+
+        return df
 
     def create_dataframe_licitacoes(self):
         '''
@@ -456,14 +582,37 @@ Agora, por favor, processe o PDF que será fornecido e retorne as informações 
                     dfs.append(df)
 
         self.dataframe_licitacoes_anotado = pd.concat(dfs)
-        
 
+        self.dataframe_licitacoes_anotado.to_csv(
+            'dataframe_licitacoes_anotado.csv', 
+            index=False, 
+            quotechar='"', 
+            quoting=csv.QUOTE_ALL
+                                      )
+        
+    def __prepare_query(self, word : str):
+        '''
+        Receive an string, and separate the spaces by &
+        '''
+        word = word.upper()
+        # no accent
+        word = pd.Series(word).str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8').values[0]
+        # no ponctuation
+        word = word.replace(r'[^\w\s]', '')
+
+        # no stop word
+        stopwords = nltk.corpus.stopwords.words('portuguese')
+        word = pd.Series(word).apply(lambda x: ' '.join([word for word in x.split() if word.lower() not in (stopwords)])).values[0]
+        
+        return word.replace(' ', ' & ')
 
     def __queryForLicitacoes(self, numero_licitacao, uf, municipio, nome_orgao):
         '''
         Method to make a query and create a dataframe with the results and
         features meaningfull for data exploration
         '''
+
+        nome_orgao_query = self.__prepare_query(nome_orgao)
 
 
         query = f'''
@@ -475,7 +624,6 @@ SELECT
     ll.objeto, ll.uf, 
     ll.municipio, 
     ll.valor_licitacao,
-    lpl.cnpj_participante,
     ceis.codigo_da_sancao as ceis_sancao,
     cnep."CODIGO_DA_SANCAO" as cnep_sancao,
     COUNT(lpl.numero_processo) AS numero_parcitipacoes
@@ -492,8 +640,8 @@ WHERE
     AND ll.uf LIKE '%%{uf}%%'
     AND ll.municipio LIKE '%%{municipio}%%'
     AND (
-        ll.nome_orgao LIKE '%%{nome_orgao}%%'
-        OR ll.nome_ug LIKE '%%{nome_orgao}%%'
+        ll.search_orgao @@ to_tsquery('portuguese', '{nome_orgao_query}')
+        OR ll.search_ug @@ to_tsquery('portuguese', '{nome_orgao_query}')
     )
 GROUP BY
     ll.numero_do_processo,
@@ -502,7 +650,6 @@ GROUP BY
     ll.objeto, ll.uf, 
     ll.municipio, 
     ll.valor_licitacao,
-    lpl.cnpj_participante,
     ceis.codigo_da_sancao,
     cnep."CODIGO_DA_SANCAO",
     ll.numero_do_processo -- Grouping to count participants per bid
@@ -650,21 +797,123 @@ class LLMPromptModel:
             print(f"Error parsing JSON: {e}")
             return None
 
+class DataBaseSanitization():
+
+        def __init__(self) -> None:
+
+            self.db_connection = PostgresConnector(DATABASE_URL)
+            
+        def sanitize_db(self):
+            
+            number_of_rows = self.db_connection.execute_select_query(
+                '''
+            SELECT COUNT(*) FROM dsa."LicitacoesLicitacao"
+            '''
+            )
+
+            number_of_offsets = number_of_rows['count'].values[0] //10000 + 1
+            rest = number_of_rows['count'].values[0] % 10000
+            
+
+            for i in range(int(number_of_offsets)):
+                df = self.__get_ug_orgao(offset=int(10000*i))
+                df = self.__toUpperCase(df)
+                df = self.__noAccent(df)
+                df = self.__noPonctuation(df)
+                df = self.__noStopWords(df)
+                self.__update_ug_norm(df)
+                self.__update_orgao_norm(df)
+
+
+        def __update_ug_norm(self, df):
+            
+            update_data = list(df[['id', 'nome_ug']].itertuples(index=False, name=None))
+            print(update_data)
+            query = """
+                UPDATE dsa."LicitacoesLicitacao" AS ll
+                SET "NOME_UG_NORM" = v.nome_ug
+                FROM (VALUES %s) AS v(id, nome_ug)
+                WHERE ll.id = v.id;
+            """
+            self.db_connection.execute_update_several(query, update_data)
+
+        def __update_orgao_norm(self, df):
+
+            update_data = list(df[['id', 'nome_orgao']].itertuples(index=False, name=None))
+            query = """
+                UPDATE dsa."LicitacoesLicitacao" AS ll
+                SET "NOME_ORGAO_NORM" = v.nome_orgao
+                FROM (VALUES %s) AS v(id, nome_orgao)
+                WHERE ll.id = v.id;
+            """
+            self.db_connection.execute_update_several(query, update_data)
+
+
+        def __get_ug_orgao(self, offset : int):
+            '''
+            Get ug and orgao to sanitize
+            '''
+            return self.db_connection.execute_select_query(f'''
+SELECT ll.id, ll.nome_ug, ll.nome_orgao
+FROM dsa."LicitacoesLicitacao" AS ll
+LIMIT 10000 OFFSET {offset}
+''')
+        
+        def __toUpperCase(self, data : pd.DataFrame):
+            '''
+            transform in uppercase
+            '''
+            for column in data.columns:
+                if data[column].dtype == 'object':
+                    data[column] = data[column].str.upper()
+
+            return data
+        
+        def __noAccent(self, data : pd.DataFrame):
+            '''
+            Remove accents
+            '''
+            for column in data.columns:
+                if data[column].dtype == 'object':
+                    data[column] = data[column].str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
+
+            return data
+        
+        
+        def __noPonctuation(self, data : pd.DataFrame):
+            '''
+            Removes chars like -, ., ,, (, ).
+            '''
+            for column in data.columns:
+                if data[column].dtype == 'object':
+                    data[column] = data[column].str.replace(r'[^\w\s]', '', regex=True)
+
+            return data
+        
+        def __noStopWords(self, data : pd.DataFrame):
+            '''
+            Removes stop words
+            '''
+            stopwords = nltk.corpus.stopwords.words('portuguese')
+
+            for column in data.columns:
+                if data[column].dtype == 'object':
+                    data[column] = data[column].apply(lambda x: ' '.join([word for word in x.split() if word.lower() not in (stopwords)]))
+
+            return data
+        
+
+
 
 D = DataAnotation()
-D.get_all_cgu_reports()
+# D.get_all_cgu_reports(only_licitacao=True)
 # D.annotate_fraud_reports()
 # D.create_dataframe_licitacoes()
-
+D.construct_database_for_prediction()
+# Class = DataBaseSanitization()
 
 # %%
 
-D.dataframe_licitacoes_anotado.to_csv('dataframe_licitacoes_anotado_v2.csv', index=False, 
-                                      
-                                      quotechar='"', quoting=csv.QUOTE_ALL
-                                      
-                                      
-                                      )
 
 
 

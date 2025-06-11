@@ -55,3 +55,5 @@ data_anotation/dataframe_licitacoes_anotado_v2.csv
 data_anotation/dataframe_licitacoes_anotado.csv
 data_anotation/fraud_numbers.pkl
 data_anotation/logger_licitacao.txt
+data_anotation/dataframe_licitacoes_anotadov3.csv
+data_anotation/df_for_prediction.csv

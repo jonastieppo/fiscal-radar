@@ -11,7 +11,7 @@ if KILLSWITH:
 
     base_url = r"https://portaldatransparencia.gov.br/download-de-dados/compras"
 
-    for ano in np.linspace(2013,2025,12):
+    for ano in np.linspace(2024,2025,12):
         for mes in np.linspace(1,12,12):
             try:
                 baixarportal_transparencia(base_url,'contratos',int(ano),int(mes))
@@ -21,7 +21,7 @@ if KILLSWITH:
     # Obtendo dados de licitacoes
     base_url = r"https://portaldatransparencia.gov.br/download-de-dados/licitacoes"
 
-    for ano in np.linspace(2013,2025,12):
+    for ano in np.linspace(2024,2025,12):
         for mes in np.linspace(1,12,12):
             try:
                 baixarportal_transparencia(base_url,'licitacoes',int(ano),int(mes))
