@@ -35,3 +35,4 @@ Extraindo os arquivos .zip
 if KILLSWITH:
     pasta_dados = os.path.join(os.getcwd(), 'dados','licitacoes')
     extrair_zips(pasta_dados)
+# %%

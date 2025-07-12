@@ -20,7 +20,7 @@ with open('Gradient Boosting.pkl', 'rb') as gb:
 # Aplicando os modelos
 
 # Garanta que o caminho para seus dados está correto
-database_production = pd.read_csv(os.path.join('data_anotation', 'production_data.csv'))
+database_production = pd.read_csv(os.path.join('data_anotation', 'df_for_prediction.csv'))
 
 # Passos de pré-processamento do script original
 database_production['tem_sancao_ceis'] = database_production['ceis_sancao'].notna().astype(int)

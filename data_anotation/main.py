@@ -135,8 +135,9 @@ class PostgresConnector:
         try:
             # The transaction is managed by the SQLAlchemy connection (self.connection)
             with raw_dbapi_connection.cursor() as cursor:
-                execute_values(cursor, query, update_data)
+                results = execute_values(cursor, query, update_data)
             
+            print(results)
             self.connection.commit()  # Commit the transaction via SQLAlchemy
             return True
         except Exception as e:
@@ -160,8 +161,12 @@ class DataAnotation:
 
         pass
 
-    def get_all_cgu_reports(self, only_licitacao=True):
+    def get_all_cgu_reports(self, only_licitacao=True, offset_number = None):
         
+        if offset_number != None:
+            self.download_cgu_report(offset_number, only_licitacao)
+            return None
+
         MAX_REPORT = 4211 # hard coded for now
 
         offset = 0
@@ -174,9 +179,10 @@ class DataAnotation:
     def download_cgu_report(self, offset, only_licitacao :  bool):
         
         if not only_licitacao:
-            base_url = fr"https://eaud.cgu.gov.br/api/relatorios/pesquisa?colunaOrdenacao=dataPublicacao&direcaoOrdenacao=DESC&tamanhoPagina=15&offset={offset*15}&dataPublicacaoInicio=01%2F01%2F2013&dataPublicacaoFim=30%2F12%2F2023&grupoAtividade%5B%5D=2572&grupoAtividade%5B%5D=12517"
+            base_url = fr"https://eaud.cgu.gov.br/api/relatorios/pesquisa?colunaOrdenacao=dataPublicacao&direcaoOrdenacao=DESC&tamanhoPagina=15&offset={offset*15}&dataPublicacaoInicio=01%2F01%2F2013&dataPublicacaoFim=03%2F07%2F2025&grupoAtividade%5B%5D=2572&grupoAtividade%5B%5D=12517"
         else:
-            base_url = fr"https://eaud.cgu.gov.br/api/relatorios/pesquisa?colunaOrdenacao=dataPublicacao&direcaoOrdenacao=DESC&tamanhoPagina=15&offset={offset*15}&dataPublicacaoInicio=01%2F01%2F2013&dataPublicacaoFim=30%2F12%2F2023&grupoAtividade%5B%5D=12517"
+            base_url = fr"https://eaud.cgu.gov.br/api/relatorios/pesquisa?colunaOrdenacao=dataPublicacao&direcaoOrdenacao=DESC&tamanhoPagina=15&offset={offset*15}&dataPublicacaoInicio=01%2F07%2F2000&dataPublicacaoFim=03%2F07%2F2025&grupoAtividade%5B%5D=12517"
+            
 
         response = requests.get(base_url, stream=True)
         json_data =  response.text
@@ -559,7 +565,12 @@ LIMIT 1000
             responses = pickle.load(f)
 
         dfs = []
-        for each_response in responses:
+        print('''
+===================================================================
+        Executando query para cada número de licitação fraudulenta ....
+===================================================================
+''')
+        for each_response in tqdm.tqdm(responses):
             
             if each_response == None:
                 continue
@@ -856,11 +867,12 @@ class DataBaseSanitization():
 
             self.db_connection = PostgresConnector(DATABASE_URL)
             
-        def sanitize_db(self):
+        def sanitize_db(self, year_init, month_init, day_init ):
             
             number_of_rows = self.db_connection.execute_select_query(
-                '''
+                f'''
             SELECT COUNT(*) FROM dsa."LicitacoesLicitacao"
+            WHERE data_resultado_compra > '{year_init}-{month_init}-{day_init}'
             '''
             )
 
@@ -869,13 +881,13 @@ class DataBaseSanitization():
             
 
             for i in range(int(number_of_offsets)):
-                df = self.__get_ug_orgao(offset=int(10000*i))
+                df = self.__get_ug_orgao(offset=int(10000*i), year_init=year_init, month_init=month_init, day_init=day_init)
                 df = self.__toUpperCase(df)
                 df = self.__noAccent(df)
                 df = self.__noPonctuation(df)
                 df = self.__noStopWords(df)
-                self.__update_ug_norm(df)
                 self.__update_orgao_norm(df)
+                self.__update_ug_norm(df)
 
 
         def __update_ug_norm(self, df):
@@ -891,8 +903,8 @@ class DataBaseSanitization():
             self.db_connection.execute_update_several(query, update_data)
 
         def __update_orgao_norm(self, df):
-
             update_data = list(df[['id', 'nome_orgao']].itertuples(index=False, name=None))
+            print(update_data)
             query = """
                 UPDATE dsa."LicitacoesLicitacao" AS ll
                 SET "NOME_ORGAO_NORM" = v.nome_orgao
@@ -902,13 +914,14 @@ class DataBaseSanitization():
             self.db_connection.execute_update_several(query, update_data)
 
 
-        def __get_ug_orgao(self, offset : int):
+        def __get_ug_orgao(self, offset : int, year_init, month_init, day_init ):
             '''
             Get ug and orgao to sanitize
             '''
             return self.db_connection.execute_select_query(f'''
 SELECT ll.id, ll.nome_ug, ll.nome_orgao
 FROM dsa."LicitacoesLicitacao" AS ll
+where data_resultado_compra > '{year_init}-{month_init}-{day_init}'
 LIMIT 10000 OFFSET {offset}
 ''')
         
@@ -961,10 +974,11 @@ LIMIT 10000 OFFSET {offset}
 D = DataAnotation()
 # D.get_all_cgu_reports(only_licitacao=True)
 # D.annotate_fraud_reports()
-# D.create_dataframe_licitacoes()
-# D.construct_database_for_prediction()
-D.generateMockProductionData()
+D.create_dataframe_licitacoes()
+D.construct_database_for_prediction()
+# D.generateMockProductionData()
 # Class = DataBaseSanitization()
+# Class.sanitize_db(2024, 1, 1)
 
 # %%
 
