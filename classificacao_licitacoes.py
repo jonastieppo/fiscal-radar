@@ -44,6 +44,8 @@ plt.xlabel('É Fraude? (1 = Sim, 0 = Não)')
 plt.ylabel('Contagem')
 plt.show()
 
+# %%
+
 # --- ETAPA 2: PRÉ-PROCESSAMENTO E ENGENHARIA DE FEATURES ---
 
 # A variável 'is_fraud' pode vir como booleana ou inteiro, vamos garantir que seja int.

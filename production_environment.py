@@ -42,9 +42,9 @@ number_of_fraud_gradient_boosting = gradient_boosting.predict(database_productio
 num_rows = len(database_production)
 
 counts = {
-    'Random Forest': np.sum(number_of_fraud_random_forest)/num_rows*100,
-    'Regressão Logística': np.sum(number_of_fraud_logistic_regression)/num_rows*100,
-    'Gradient Boosting': np.sum(number_of_fraud_gradient_boosting)/num_rows*100
+    'Random Forest': np.sum(number_of_fraud_random_forest),
+    'Regressão Logística': np.sum(number_of_fraud_logistic_regression),
+    'Gradient Boosting': np.sum(number_of_fraud_gradient_boosting)
 }
 
 # 2. Criar um DataFrame para a plotagem
@@ -69,3 +69,4 @@ ax.set_ylabel(fr'% de Fraudes Detectadas (em relação a {num_rows} registros).'
 # Garantir que o layout fique bem ajustado e exibir o gráfico
 plt.tight_layout()
 plt.show()
+# %%
