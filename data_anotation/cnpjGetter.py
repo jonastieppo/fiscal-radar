@@ -12,6 +12,7 @@ import subprocess
 from flask import Flask, request
 from bs4 import BeautifulSoup
 from flask_cors import CORS
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -44,20 +45,15 @@ def saveEnterpriseOpening():
         record_id = data['id']
         string_text = data['htmlContent']
         #get the enterprise opening
-        opening_date = extract_opening_date(string_text)
 
-        # Define the filename for the document
-        # You can make this dynamic if needed, e.g., using a timestamp
-
-        filename = "enterprise_opening_data.txt"
-
-        print(opening_date)
+        if not os.path.exists(os.path.join(os.getcwd(), 'enterprise_opening_date')):
+            os.mkdir(os.path.join(os.getcwd(), 'enterprise_opening_date'))
 
         # Save the string to the file
-        with open(filename, "a") as f: # Use "a" for append mode to add to existing file
-            f.write(f"{{id:{record_id},opening_date:{string_text}}}" + "\n") # Add a newline for each entry
+        with open(os.path.join(os.getcwd(), 'enterprise_opening_date', f"enterprise_{record_id}.txt"), 'w', encoding='utf-8') as f: # Use "a" for append mode to add to existing file
+            f.write(string_text)
 
-        return f"Successfully saved data to {filename}!", 200
+        return f"Successfully saved data to {f"enterprise_{record_id}"}!", 200
 
     except Exception as e:
         # Basic error handling
