@@ -1,5 +1,5 @@
 // Metologia para buscar a região em pixel que foi clicada
-const elementCLicked = document.getElementsByTagName('iframe')[0];
+const elementCLicked = document.getElementById('checkbox');
 
 if (elementCLicked) {
     elementCLicked.addEventListener('click', function(event) {

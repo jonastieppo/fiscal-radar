@@ -508,6 +508,7 @@ Agora, por favor, processe o PDF que será fornecido e retorne as informações 
         query =  '''
 SELECT 
     ll.numero_do_processo,
+    lpl.cnpj_participante,
     ll.nome_ug, 
     ll.modalidade_compra, 
     ll.objeto, 
@@ -539,6 +540,7 @@ LEFT JOIN
     ON CAST(cnep."CPF_CNPJ" AS TEXT) = lpl.cnpj_participante
 GROUP BY
     ll.numero_do_processo,
+    lpl.cnpj_participante,
     ll.nome_ug, 
     ll.modalidade_compra, 
     ll.objeto, 
@@ -630,6 +632,7 @@ LIMIT 1000
 
 SELECT 
     ll.numero_do_processo,
+    lpl.cnpj_participante,
     ll.nome_ug, 
     ll.modalidade_compra, 
     ll.objeto, ll.uf, 
@@ -656,6 +659,7 @@ WHERE
     )
 GROUP BY
     ll.numero_do_processo,
+    lpl.cnpj_participante,
     ll.nome_ug, 
     ll.modalidade_compra, 
     ll.objeto, ll.uf, 
@@ -693,6 +697,7 @@ GROUP BY
         query = '''
 SELECT 
     ll.numero_do_processo,
+    lpl.cnpj_participante,
     ll.nome_ug, 
     ll.modalidade_compra, 
     ll.objeto, 
@@ -724,6 +729,7 @@ LEFT JOIN
     ON CAST(cnep."CPF_CNPJ" AS TEXT) = lpl.cnpj_participante
 GROUP BY
     ll.numero_do_processo,
+    lpl.cnpj_participante,
     ll.nome_ug, 
     ll.modalidade_compra, 
     ll.objeto, 
@@ -970,17 +976,15 @@ LIMIT 10000 OFFSET {offset}
         
 
 
-
-D = DataAnotation()
-# D.get_all_cgu_reports(only_licitacao=True)
-# D.annotate_fraud_reports()
-D.create_dataframe_licitacoes()
-# D.construct_database_for_prediction()
-# D.generateMockProductionData()
-# Class = DataBaseSanitization()
-# Class.sanitize_db(2024, 1, 1)
-
-# %%
+if __name__ == '__main__':
+    D = DataAnotation()
+    # D.get_all_cgu_reports(only_licitacao=True)
+    # D.annotate_fraud_reports()
+    D.create_dataframe_licitacoes()
+    D.construct_database_for_prediction()
+    # D.generateMockProductionData()
+    # Class = DataBaseSanitization()
+    # Class.sanitize_db(2024, 1, 1)
 
 
 

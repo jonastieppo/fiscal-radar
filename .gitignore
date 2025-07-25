@@ -61,3 +61,5 @@ data_anotation/production_data.csv
 Random Forest.pkl
 Regressão Logística.pkl
 Gradient Boosting.pkl
+
+/data_anotation/enterprise_opening_date

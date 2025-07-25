@@ -2,26 +2,34 @@
 
 screenCood = '''
 User clicked the checkbox!
-hcaptcha.html:14 Viewport coordinates (clientX, clientY): (29, 41)
-hcaptcha.html:14 Screen coordinates (screenX, screenY): (605, 405)
-hcaptcha.html:14 Coordinates relative to element (offsetX, offsetY): (13, 18)
-hcaptcha.html:14 Checkbox checked state: undefined
+Screen coordinates (screenX, screenY): (1605, 580)
 '''
 
 import subprocess
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from bs4 import BeautifulSoup
 from flask_cors import CORS
 import os
+from dotenv import load_dotenv
+import pandas as pd
+
+
 
 app = Flask(__name__)
 CORS(app)
 
 @app.get("/")
 def clickCaptcha():
-    subprocess.run(["xdotool", "mousemove", "605", "405", "click", "1"]) # ajustar coordenadas cada vez
+    subprocess.run(["xdotool", "mousemove", "1605", "580", "click", "1"]) # ajustar coordenadas cada vez
     print("clicked")
     return "Clicked!"
+
+@app.get("/cnpj")
+def returnListCNPJ():
+
+    data = pd.read_csv("dataframe_licitacoes_anotado.csv")
+    
+    return list(data['cnpj_participante'])
 
 @app.post("/")
 def saveEnterpriseOpening():
