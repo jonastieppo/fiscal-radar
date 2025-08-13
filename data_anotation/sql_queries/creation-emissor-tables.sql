@@ -43,11 +43,11 @@ CREATE TABLE IF NOT EXISTS dsa.Empresas (
     data_situacao_especial DATE,
     
     -- Chaves Estrangeiras
-    FOREIGN KEY (id_porte_empresa) REFERENCES PortesEmpresa (id_porte_empresa),
-    FOREIGN KEY (codigo_natureza_juridica) REFERENCES NaturezasJuridicas (codigo),
-    FOREIGN KEY (cnae_principal) REFERENCES Atividades (cnae),
-    FOREIGN KEY (status_cadastral) REFERENCES StatusCadastrais (status),
-    FOREIGN KEY (situacao_especial_descricao) REFERENCES SituacoesEspeciais (descricao)
+    FOREIGN KEY (id_porte_empresa) REFERENCES dsa.PortesEmpresa (id_porte_empresa),
+    FOREIGN KEY (codigo_natureza_juridica) REFERENCES dsa.NaturezasJuridicas (codigo),
+    FOREIGN KEY (cnae_principal) REFERENCES dsa.Atividades (cnae),
+    FOREIGN KEY (status_cadastral) REFERENCES dsa.StatusCadastrais (status),
+    FOREIGN KEY (situacao_especial_descricao) REFERENCES dsa.SituacoesEspeciais (descricao)
 );
 
 -- Tabela para armazenar os dados de contato de cada empresa (relacionamento 1 para 1)
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS dsa.Contatos (
     email VARCHAR(255),
     telefone VARCHAR(20),
     
-    FOREIGN KEY (cnpj_empresa) REFERENCES Empresas (cnpj)
+    FOREIGN KEY (cnpj_empresa) REFERENCES dsa.Empresas (cnpj)
 );
 
 -- Tabela para armazenar os dados de endereço de cada empresa (relacionamento 1 para 1)
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS dsa.Enderecos (
     municipio VARCHAR(255),
     uf VARCHAR(2),
     
-    FOREIGN KEY (cnpj_empresa) REFERENCES Empresas (cnpj)
+    FOREIGN KEY (cnpj_empresa) REFERENCES dsa.Empresas (cnpj)
 );
 
 -- Tabela de junção para a relação N-para-N (Empresas e Atividades Secundárias)
@@ -81,6 +81,6 @@ CREATE TABLE IF NOT EXISTS dsa.Empresas_Atividades_Secundarias (
     cnae_secundaria VARCHAR(15),
     
     PRIMARY KEY (cnpj_empresa, cnae_secundaria), -- Chave primária composta
-    FOREIGN KEY (cnpj_empresa) REFERENCES Empresas (cnpj),
-    FOREIGN KEY (cnae_secundaria) REFERENCES Atividades (cnae)
+    FOREIGN KEY (cnpj_empresa) REFERENCES dsa.Empresas (cnpj),
+    FOREIGN KEY (cnae_secundaria) REFERENCES dsa.Atividades (cnae)
 );
