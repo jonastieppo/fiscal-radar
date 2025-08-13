@@ -1,19 +1,30 @@
+DROP TABLE IF EXISTS dsa.Empresas_Atividades_Secundarias;
+DROP TABLE IF EXISTS dsa.Enderecos;
+DROP TABLE IF EXISTS dsa.Contatos;
+DROP TABLE IF EXISTS dsa.Empresas;
+DROP TABLE IF EXISTS dsa.SituacoesEspeciais;
+DROP TABLE IF EXISTS dsa.StatusCadastrais;
+DROP TABLE IF EXISTS dsa.Atividades;
+DROP TABLE IF EXISTS dsa.NaturezasJuridicas;
+DROP TABLE IF EXISTS dsa.PortesEmpresa;
+
+
 -- Tabela para armazenar as descrições dos portes de empresa
 CREATE TABLE IF NOT EXISTS dsa.PortesEmpresa (
     id_porte_empresa VARCHAR(50) PRIMARY KEY,
-    descricao VARCHAR(255) NOT NULL
+    descricao VARCHAR(255) 
 );
 
 -- Tabela para armazenar as descrições da natureza jurídica
 CREATE TABLE IF NOT EXISTS dsa.NaturezasJuridicas (
     codigo VARCHAR(10) PRIMARY KEY,
-    descricao VARCHAR(255) NOT NULL
+    descricao VARCHAR(255) 
 );
 
 -- Tabela para armazenar os códigos e descrições das atividades (CNAE)
 CREATE TABLE  IF NOT EXISTS dsa.Atividades (
     cnae VARCHAR(15) PRIMARY KEY,
-    descricao VARCHAR(255) NOT NULL
+    descricao VARCHAR(255) 
 );
 
 -- Tabela para armazenar os status cadastrais possíveis
@@ -30,9 +41,9 @@ CREATE TABLE IF NOT EXISTS dsa.SituacoesEspeciais (
 -- Tabela principal para as empresas
 CREATE TABLE IF NOT EXISTS dsa.Empresas (
     cnpj VARCHAR(18) PRIMARY KEY,
-    nome_empresarial VARCHAR(255) NOT NULL,
+    nome_empresarial VARCHAR(255) ,
     nome_fantasia VARCHAR(255),
-    data_abertura DATE NOT NULL,
+    data_abertura DATE ,
     id_porte_empresa VARCHAR(50),
     codigo_natureza_juridica VARCHAR(10),
     cnae_principal VARCHAR(15),
@@ -64,8 +75,8 @@ CREATE TABLE IF NOT EXISTS dsa.Contatos (
 CREATE TABLE IF NOT EXISTS dsa.Enderecos (
     id_endereco SERIAL PRIMARY KEY,
     cnpj_empresa VARCHAR(18) UNIQUE, -- UNIQUE para garantir que cada empresa tenha apenas um endereço
-    logradouro VARCHAR(255) NOT NULL,
-    numero VARCHAR(50) NOT NULL,
+    logradouro VARCHAR(255) ,
+    numero VARCHAR(50) ,
     complemento VARCHAR(255),
     cep VARCHAR(10),
     bairro_distrito VARCHAR(255),
