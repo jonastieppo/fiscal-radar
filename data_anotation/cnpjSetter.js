@@ -15,11 +15,19 @@
 
 function populateCnpj(){
         getAllCnpj().then((data)=>{
-            const counter = +localStorage.getItem('counter')
+            let counter = +localStorage.getItem('counter')
             cnpjEntry = document.getElementById("cnpj")
-            console.log(`Preenchendo cnpj ${data[counter]}`)
-            cnpjEntry.value = formatCNPJ(data[counter])
-            localStorage.setItem('cnpj', data[counter])
+            let cnpj_str = data[counter]
+            console.log('Testando para ver se o cnpj é valido')
+            while(data[counter].length !=14){
+                counter++
+                cnpj_str = data[counter]
+                console.log('buscando outro cnpj....')
+            }
+
+            console.log(`Preenchendo cnpj ${cnpj_str}`)
+            cnpjEntry.value = formatCNPJ(cnpj_str)
+            localStorage.setItem('cnpj', cnpj_str)
             localStorage.setItem('counter', counter+1)
 
             fetch(flaskUrl, {
@@ -53,4 +61,35 @@ function populateCnpj(){
             return `${part1}.${part2}.${part3}/${part4}-${part5}`;
         }
 
-populateCnpj()
+
+function clickConsultar(){
+    document.getElementsByClassName('btn btn-primary')[0].click()
+}
+
+
+    async function sendContentToFlask(content, cnpj){
+
+        const response = await fetch(flaskUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                id: cnpj,
+                htmlContent: content.innerText
+            }),
+        });
+
+    }
+
+    function getAndSendPDFContent() {
+        const cnpj = localStorage.getItem('cnpj')
+        const content = document.getElementsByClassName("conteudo")[0]
+        sendContentToFlask(content, cnpj).then(()=>{
+            console.log("Conteúdo enviado!")
+            window.location.href = 'https://solucoes.receita.fazenda.gov.br/servicos/cnpjreva/Cnpjreva_Solicitacao.asp'
+        })
+        .catch(()=> console.log('Deu algum problema'))
+
+    }
+

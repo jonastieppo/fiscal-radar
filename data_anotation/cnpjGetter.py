@@ -20,7 +20,9 @@ CORS(app)
 
 @app.get("/")
 def clickCaptcha():
-    subprocess.run(["xdotool", "mousemove", "1605", "580", "click", "1"]) # ajustar coordenadas cada vez
+    subprocess.run(["xdotool", "mousemove", "1596", "548", "click", "1"]) # ajustar coordenadas cada vez
+    subprocess.run(["sleep", "1"]) # ajustar coordenadas cada vez
+    subprocess.run(["xdotool", "mousemove", "1596", "548", "click", "1"]) # ajustar coordenadas cada vez
     print("clicked")
     return "Clicked!"
 
