@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS dsa.Contatos (
     id_contato SERIAL PRIMARY KEY,
     cnpj_empresa VARCHAR(18) UNIQUE, -- UNIQUE para garantir que cada empresa tenha apenas um contato
     email VARCHAR(255),
-    telefone VARCHAR(20),
+    telefone VARCHAR(100),
     
     FOREIGN KEY (cnpj_empresa) REFERENCES dsa.Empresas (cnpj)
 );
