@@ -76,6 +76,7 @@ if KILLSWITCH_LICITACOES:
             db_user=db_user,
             db_password=db_password,
             db_name=db_name,
+            desired_date_range=[(2024,1),(2024,12)],
             schema = 'dsa',
             contratos_compras_SQL_COLUMNS = contratos_compras_SQL_COLUMNS,
             contratos_itemCompra_SQL_COLUMNS = contratos_itemCompra_SQL_COLUMNS,

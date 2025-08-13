@@ -519,6 +519,7 @@ def parse_licitacoes_and_insert_in_database(
                                     db_password : str,
                                     db_name : str,
                                     schema = 'dsa',
+                                    desired_date_range = None,
                                     **dicionaries_sql    
                                             ):
     '''
@@ -539,14 +540,13 @@ def parse_licitacoes_and_insert_in_database(
 ''')
     for folder, subfolder, files in tqdm.tqdm(os.walk(root_folder)):
         for file in tqdm.tqdm(files):
-            if file.endswith('.csv'):
+            if file.endswith('.csv') and __filterDesiredDate(os.path.basename(folder), desired_date_range):
                 csv_path = os.path.join(folder, file)
                 print(f'''
 .....................................
 | Insert para: {file}               |
 .....................................
             ''')
-
                 if file.endswith('Compras.csv'):
                     columns_dictionary = contratos_compras_SQL_COLUMNS
                     table_name = get_table_name("dicionario_tabela_contratos_compras")
@@ -588,3 +588,39 @@ def parse_licitacoes_and_insert_in_database(
                     db_name=db_name
                 )
 
+def __filterDesiredDate(folder : str, desired_date_range : list[tuple]):
+    '''
+    Helper function to filter the desired data range. 
+
+    It will receive the folder path string, and parse the metainfo.
+
+    The desired date must but init date (YYYY,MM)- end date(YYYY,MM)
+    '''
+    if desired_date_range is None:
+        return True
+        
+    meta_info = folder.split(sep='_')
+
+    if len(meta_info) != 3:
+        # Na execução correta, metainfo tem exatamente 3 partes
+        # tipo, ano e mes
+        return False
+    
+    year =  int(meta_info[1])
+    month = int(meta_info[2])
+
+    init_date = desired_date_range[0]
+    late_date =   desired_date_range[1]
+
+    YYYY_init  = int(init_date[0])
+    MM_init    = int(init_date[1])
+    YYYY_end   = int(late_date[0])
+    MM_end     = int(late_date[1])
+
+    if year>=YYYY_init and \
+       month >= MM_init and \
+       year <= YYYY_end and \
+       month <= MM_end:
+        return True
+    else:
+        return False
